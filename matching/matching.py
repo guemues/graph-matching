@@ -12,6 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def compare_difference_graph(graph_1, graph_2):
+    """
+    Check how many edges are different between two graph
+    :param graph_1:
+    :param graph_2:
+    :return:
+    """
     count = 0
     for edge in graph_1.edges():
         if edge not in graph_2.edges():
@@ -42,7 +48,7 @@ def swap_dimensions(embedding, dimension_1, dimension_2):
     return embedding
 
 
-def best_compare_mirror_embeddings(embedding_1, embedding_2):
+def best_compare_mirror_embeddings(embedding_1, embedding_2, distance=euclidean):
     """
     Try to find best embedding dimensions by changing sign of the dimensions
 
@@ -58,7 +64,7 @@ def best_compare_mirror_embeddings(embedding_1, embedding_2):
 
     all_sign_possibilities = find_all_sign_possibilities(*(dimension_len * [np.array([-1, 1])]))
 
-    points = [compare_ordered_embeddings(embedding_1, np.dot(embedding_2, np.diag(np.array(sign_p)))) for sign_p in all_sign_possibilities]
+    points = [compare_ordered_embeddings(embedding_1, np.dot(embedding_2, np.diag(np.array(sign_p))), distance=distance) for sign_p in all_sign_possibilities]
 
     logger.info(points)
 
@@ -103,7 +109,7 @@ def compare_ordered_embeddings(embedding_1, embedding_2, distance=euclidean):
 
 def calculate_distances(embeddings_1, embeddings_2, distance=euclidean):
     """
-
+    Calculate distances in between embeddings
     :param embeddings_1:
     :param embeddings_2:
     :param distance:
