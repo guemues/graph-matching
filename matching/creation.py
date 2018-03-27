@@ -7,7 +7,7 @@ import networkx as nx
 import pandas as pd
 
 from random import shuffle
-from enum import Enum, auto
+from enum import Enum
 from gem.embedding.gf import GraphFactorization
 from gem.embedding.lap import LaplacianEigenmaps
 from gem.embedding.lle import LocallyLinearEmbedding
