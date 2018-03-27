@@ -3,8 +3,6 @@
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 from matching import match_using_threshold, confusion_matrix
 
@@ -140,33 +138,33 @@ def distribution_pd_row(distances, mapping_1, mapping_2, edge_removal_possibilit
     return df
 
 
-def plot_distributions_from_pandas(df_all):
-
-    for dimension_count in df_all.dimensions.unique():
-        for algorithm in df_all.algorithm.unique():
-            fig, ax = plt.subplots(nrows=2, ncols=len(df_all.q_value.unique()), sharex='col', sharey='row', figsize=(20, 8))
-
-            for idx, q_value in enumerate(df_all.q_value.unique()):
-
-                df = df_all[df_all["algorithm"] == algorithm]
-                df = df[df["q_value"] == q_value]
-                df = df[df["dimensions"] == dimension_count]
-
-                fig.suptitle("Alg: {}, Dim: {}".format(algorithm, dimension_count), fontsize=10)
-                ax[0, idx].set_title("Q: {}".format(q_value), fontsize=10)
-
-                g1 = sns.kdeplot(df[df["correctness"] == "FALSE"].distances, ax=ax[0, idx], shade=True, cumulative=False, label='False')
-                g2 = sns.kdeplot(df[df["correctness"] == "CORRECT"].distances, ax=ax[0, idx], shade=True, cumulative=False, label='Correct')
-
-                g1.set(ylim=(0, 500))
-                g2.set(ylim=(0, 500))
-
-                g1_cum = sns.kdeplot(df[df["correctness"] == "FALSE"].distances, ax=ax[1, idx], shade=True, cumulative=True,
-                                 label='False')
-                g2_cum = sns.kdeplot(df[df["correctness"] == "CORRECT"].distances, ax=ax[1, idx], shade=True, cumulative=True,
-                                 label='Correct')
-
-                g1_cum.set(ylim=(0, 1.15))
-                g2_cum.set(ylim=(0, 1.15))
-
-            plt.show()
+# def plot_distributions_from_pandas(df_all):
+#
+#     for dimension_count in df_all.dimensions.unique():
+#         for algorithm in df_all.algorithm.unique():
+#             fig, ax = plt.subplots(nrows=2, ncols=len(df_all.q_value.unique()), sharex='col', sharey='row', figsize=(20, 8))
+#
+#             for idx, q_value in enumerate(df_all.q_value.unique()):
+#
+#                 df = df_all[df_all["algorithm"] == algorithm]
+#                 df = df[df["q_value"] == q_value]
+#                 df = df[df["dimensions"] == dimension_count]
+#
+#                 fig.suptitle("Alg: {}, Dim: {}".format(algorithm, dimension_count), fontsize=10)
+#                 ax[0, idx].set_title("Q: {}".format(q_value), fontsize=10)
+#
+#                 g1 = sns.kdeplot(df[df["correctness"] == "FALSE"].distances, ax=ax[0, idx], shade=True, cumulative=False, label='False')
+#                 g2 = sns.kdeplot(df[df["correctness"] == "CORRECT"].distances, ax=ax[0, idx], shade=True, cumulative=False, label='Correct')
+#
+#                 g1.set(ylim=(0, 500))
+#                 g2.set(ylim=(0, 500))
+#
+#                 g1_cum = sns.kdeplot(df[df["correctness"] == "FALSE"].distances, ax=ax[1, idx], shade=True, cumulative=True,
+#                                  label='False')
+#                 g2_cum = sns.kdeplot(df[df["correctness"] == "CORRECT"].distances, ax=ax[1, idx], shade=True, cumulative=True,
+#                                  label='Correct')
+#
+#                 g1_cum.set(ylim=(0, 1.15))
+#                 g2_cum.set(ylim=(0, 1.15))
+#
+#             plt.show()
