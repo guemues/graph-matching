@@ -51,10 +51,6 @@ class Simulation(object):
         self.verbose = verbose
         self._create_graphs()
 
-    def load(self):
-        folder = os.path.join(RESULTS_FOLDER, self.test_id)
-        self.main_graph = nx.read_gpickle(os.path.join(folder, 'nx_main_graph'))
-
     def save(self):
         if not os.path.exists(RESULTS_FOLDER):
             os.makedirs(RESULTS_FOLDER)
