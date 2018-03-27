@@ -3,7 +3,7 @@
 """This module implemented for embedding matching."""
 
 
-from enum import Enum, auto
+from enum import Enum
 from scipy.spatial.distance import euclidean
 from scipy.spatial import distance_matrix
 import numpy as np
@@ -17,8 +17,8 @@ class ComparisonType(Enum):
 
 
 class MatchingType(Enum):
-    Nearest = auto()
-    Circle = auto()
+    Nearest = "2"
+    Circle = "1"
 
 
 def compare_difference_graph(graph_1, graph_2):

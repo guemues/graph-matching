@@ -15,7 +15,8 @@ from gem.embedding.hope import HOPE
 
 __all__ = ['MainGraph', 'NoisyGraph', 'EmbeddingType', 'RandomGraphType', 'create_main_graph']
 
-def create_noisy_graph(nx_graph: nx.Graph, noise, mixing=False):
+
+def create_noisy_graph(nx_graph, noise, mixing=False):
     """
     This implementation is not in-place.
 
@@ -83,9 +84,11 @@ class MainGraph(Graph):
             nx_graph,
             edge_probability,
             node_count,
-            embedding_algorithm_enum: EmbeddingType,
+            embedding_algorithm_enum,
             dimension_count
     ):
+        assert isinstance(embedding_algorithm_enum, EmbeddingType)
+
         super().__init__()
         self.edge_probability = edge_probability
         self.node_count = node_count
@@ -109,10 +112,12 @@ class NoisyGraph(Graph):
             edge_probability,
             node_count,
             edge_removal_probability,
-            embedding_algorithm_enum: EmbeddingType,
+            embedding_algorithm_enum,
             dimension_count,
     ):
         super().__init__()
+
+        assert isinstance(embedding_algorithm_enum, EmbeddingType)
 
         self.edge_probability = edge_probability
         self.node_count = node_count
@@ -161,7 +166,10 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
     return e
 
 
-def create_main_graph(graph_type: RandomGraphType, **kwargs):
+def create_main_graph(graph_type, **kwargs):
+
+    assert isinstance(graph_type, RandomGraphType)
+
     if graph_type is RandomGraphType.GNP:
         assert 'edge_probability' in kwargs
         assert 'node_count' in kwargs
