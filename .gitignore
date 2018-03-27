@@ -101,3 +101,11 @@ ENV/
 .mypy_cache/
 .idea/
 main.py
+.ipynb_checkpoints/
+notebooks/
+*.ipynb
+*.pickle
+_*.py
+.DS_Store
+data/
+results/

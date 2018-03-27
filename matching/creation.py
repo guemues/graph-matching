@@ -1,40 +1,182 @@
+#!/usr/bin/env python
+
+"""This module implemented for graph and embedding creation."""
+
 import numpy as np
-import itertools
 import networkx as nx
+import pandas as pd
 
-__all__ = ['noisy_version']
+from random import shuffle
+from enum import Enum, auto
+from gem.embedding.gf import GraphFactorization
+from gem.embedding.lap import LaplacianEigenmaps
+from gem.embedding.lle import LocallyLinearEmbedding
+from gem.embedding.hope import HOPE
 
+__all__ = ['MainGraph', 'NoisyGraph', 'EmbeddingType', 'RandomGraphType', 'create_main_graph']
 
-def noisy_version(graph: nx.Graph, q=0.01) -> nx.Graph:
+def create_noisy_graph(nx_graph: nx.Graph, noise, mixing=False):
     """
-    Not in-place
+    This implementation is not in-place.
+
+    :param mixing:
+    :param nx_graph:
     :param q: Probability of changing the edge
     """
+    nodes_count = len(nx_graph.nodes())
 
-    def toggle_edge(graph: nx.Graph, source, target) -> nx.Graph:
-        """
-        In-place
-        If there is a edge in-between source and target remove it. If there is not, add it.
+    if mixing:
+        mapping = dict(zip(nx_graph.nodes(), np.random.permutation(nodes_count)))
+    else:
+        mapping = dict(zip(nx_graph.nodes(), nx_graph.nodes()))
 
-        :param source: Edge source
-        :param target: Edge target
-        """
-        if graph.has_edge(source, target):
-            graph.remove_edge(source, target)
-        else:
-            graph.add_edge(source, target)
+    nx_graph = nx.relabel_nodes(nx_graph, mapping)
 
-        return graph
+    edges = list(nx_graph.edges())
+    shuffle(edges)
+    edges_selected = edges[0:int(len(nx_graph.edges) * (1 - noise))]
 
-    copy_graph = graph.copy()
-    all_possible_node_pairs = [i for i in itertools.product(copy_graph.nodes(), copy_graph.nodes())]
+    graph = nx.Graph(nx_graph.edge_subgraph(edges_selected))
+    mapping = mapping
 
-    which_possible_node_pairs_will_effect = np.random.binomial(1, q, len(all_possible_node_pairs))
-
-    for idx, (source_node, target_node) in enumerate(all_possible_node_pairs):
-        if which_possible_node_pairs_will_effect[idx] == 1:
-            toggle_edge(copy_graph, source_node, target_node)
-
-    return copy_graph
+    return graph, mapping
 
 
+class EmbeddingType(Enum):
+    LocallyLinearEmbedding = "LLE"
+    Hope = "HOPE"
+    GF = "GF"
+    LaplacianEigenmaps = "LE"
+    DegreeDistribution = "DEGREE"
+
+
+class RandomGraphType(Enum):
+    GNP = "GNP"
+    Powerlaw = "POWERLAW"
+
+
+class Graph(object):
+
+    def __init__(
+            self
+    ):
+        self.graph = None
+        pass
+
+    def find_node_degrees(self):
+        nodes, degrees = [], []
+        for i, v in self.graph.degree:
+            nodes.append(i)
+            degrees.append(v)
+        df = pd.DataFrame(
+            data={
+                "node": nodes,
+                "degree": degrees
+            })
+        return df.set_index('node')
+
+
+class MainGraph(Graph):
+
+    def __init__(
+            self,
+            nx_graph,
+            edge_probability,
+            node_count,
+            embedding_algorithm_enum: EmbeddingType,
+            dimension_count
+    ):
+        super().__init__()
+        self.edge_probability = edge_probability
+        self.node_count = node_count
+        self.graph = nx_graph
+        self.max_degree = max(dict(nx_graph.degree).values())
+        self.min_degree = min(dict(nx_graph.degree).values())
+        self.degree_dist = list(dict(nx_graph.degree).values())
+
+        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.min_degree, self.max_degree)
+
+    @property
+    def embeddings(self):
+        return self.e
+
+
+class NoisyGraph(Graph):
+
+    def __init__(
+            self,
+            main_graph,
+            edge_probability,
+            node_count,
+            edge_removal_probability,
+            embedding_algorithm_enum: EmbeddingType,
+            dimension_count,
+    ):
+        super().__init__()
+
+        self.edge_probability = edge_probability
+        self.node_count = node_count
+
+        self.main_graph = main_graph
+
+        self.noise = edge_removal_probability
+
+        self.mapping = None
+        self.graph = None
+
+        self.graph, self.mapping = create_noisy_graph(self.main_graph.graph, self.noise)
+
+        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.main_graph.min_degree, self.main_graph.max_degree)
+
+
+    @property
+    def main_embeddings(self):
+        return self.main_graph.embeddings
+
+    @property
+    def embeddings(self):
+        return self.e
+
+
+def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None, higher=None):
+    """Generate embeddings. """
+
+    if embedding_algorithm_enum is EmbeddingType.LocallyLinearEmbedding:
+        embedding_alg = LocallyLinearEmbedding(d=dimension_count)
+    elif embedding_algorithm_enum is EmbeddingType.Hope:
+        embedding_alg = HOPE(d=dimension_count, beta=0.01)
+    elif embedding_algorithm_enum is EmbeddingType.GF:
+        embedding_alg = GraphFactorization(d=dimension_count, max_iter=100000, eta=1 * 10 ** -4, regu=1.0)
+    elif embedding_algorithm_enum is EmbeddingType.LaplacianEigenmaps:
+        embedding_alg = LaplacianEigenmaps(d=dimension_count)
+    elif embedding_algorithm_enum is EmbeddingType.DegreeDistribution:
+        A = np.array([np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        return A
+    else:
+        raise NotImplementedError
+
+    e, t = embedding_alg.learn_embedding(graph=graph, no_python=True)
+
+    e = np.dot(e, np.diag(np.sign(np.mean(e, axis=0))))
+    return e
+
+
+def create_main_graph(graph_type: RandomGraphType, **kwargs):
+    if graph_type is RandomGraphType.GNP:
+        assert 'edge_probability' in kwargs
+        assert 'node_count' in kwargs
+
+        edge_probability = kwargs['edge_probability']
+        node_count = kwargs['node_count']
+
+        return nx.gnp_random_graph(node_count, edge_probability)
+
+    if graph_type is RandomGraphType.Powerlaw:
+        assert 'edge_probability' in kwargs
+        assert 'node_count' in kwargs
+
+        edge_probability = kwargs['edge_probability']
+        node_count = kwargs['node_count']
+
+        edge_count = int(edge_probability * node_count)
+        return nx.powerlaw_cluster_graph(node_count, edge_count, .0)

@@ -1,14 +1,24 @@
-import numpy as np
-import logging
+#!/usr/bin/env python
 
+"""This module implemented for embedding matching."""
+
+
+from enum import Enum, auto
 from scipy.spatial.distance import euclidean
-from sympy.utilities.iterables import multiset_permutations
+from scipy.spatial import distance_matrix
+import numpy as np
 
-__all__ = ['compare_ordered_embeddings', 'best_compare_swapping_embeddings', 'best_compare_mirror_embeddings', 'compare_difference_graph']
+__all__ = ['compare_embeddings', 'map_embeddings_probabilities', 'match_using_threshold', 'confusion_matrix', 'ComparisonType']
 
-logging.basicConfig(level=logging.DEBUG)
 
-logger = logging.getLogger(__name__)
+class ComparisonType(Enum):
+    Distribution = "DISTRIBUTION"
+    Accuracy = "ACCURACY"
+
+
+class MatchingType(Enum):
+    Nearest = auto()
+    Circle = auto()
 
 
 def compare_difference_graph(graph_1, graph_2):
@@ -29,67 +39,7 @@ def compare_difference_graph(graph_1, graph_2):
     return count
 
 
-def swap_dimensions(embedding, dimension_1, dimension_2):
-    """
-       Swap row and column i and j in-place.
-
-       Examples
-       --------
-       >>> cm = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
-       >>> swap_dimensions(cm, 2, 0)
-       array([[2, 1, 0],
-              [5, 4, 3],
-              [8, 7, 6]])
-       """
-
-    temp = np.copy(embedding[:, dimension_1])
-    embedding[:, dimension_1] = embedding[:, dimension_2]
-    embedding[:, dimension_2] = temp
-    return embedding
-
-
-def best_compare_mirror_embeddings(embedding_1, embedding_2, distance=euclidean):
-    """
-    Try to find best embedding dimensions by changing sign of the dimensions
-
-    :param embedding_1:
-    :param embedding_2:
-    """
-    dimension_len = embedding_1.shape[1]
-
-    def find_all_sign_possibilities(*arrays):
-        grid = np.meshgrid(*arrays)
-        coord_list = [entry.flatten() for entry in grid]
-        return np.vstack(coord_list).T.tolist()
-
-    all_sign_possibilities = find_all_sign_possibilities(*(dimension_len * [np.array([-1, 1])]))
-
-    points = [compare_ordered_embeddings(embedding_1, np.dot(embedding_2, np.diag(np.array(sign_p))), distance=distance) for sign_p in all_sign_possibilities]
-
-    logger.info(points)
-
-    return min(points)
-
-
-def best_compare_swapping_embeddings(embedding_1, embedding_2):
-    """
-    Try to find best embedding dimensions by changing order of the dimensions
-
-    :param embedding_1:
-    :param embedding_2:
-    """
-    assert embedding_1.shape == embedding_2.shape
-
-    dimensions_count = embedding_1.shape[1]
-    all_permutations = multiset_permutations(np.arange(dimensions_count))
-    points = [compare_ordered_embeddings(embedding_1, embedding_2[:, i]) for i in all_permutations]
-
-    logger.info(points)
-
-    return min(points)
-
-
-def compare_ordered_embeddings(embedding_1, embedding_2, distance=euclidean):
+def compare_embeddings(embedding_1, embedding_2, distance=euclidean):
     """
 
     :param embedding_1:
@@ -107,7 +57,7 @@ def compare_ordered_embeddings(embedding_1, embedding_2, distance=euclidean):
     return squares_sum / embedding_1.shape[0]
 
 
-def calculate_distances(embeddings_1, embeddings_2, distance=euclidean):
+def calculate_distances_iterative(embeddings_1, embeddings_2, distance=euclidean):
     """
     Calculate distances in between embeddings
     :param embeddings_1:
@@ -125,7 +75,54 @@ def calculate_distances(embeddings_1, embeddings_2, distance=euclidean):
 
     return distances
 
-# def mapping_embeddings(embeddings_1, embeddings_2, distance=euclidean):
-#
-#
-#     return distances
+
+def match_using_threshold(distances, ratio):
+    """Match """
+
+    neighbors = np.zeros(shape=distances.shape, dtype=np.uint8)
+    neighbors[distances < ratio * np.max(distances)] = 1
+    return neighbors
+
+
+def correctly_estimated_nodes(matches, mapping_1, mapping_2):
+    """
+    # TODO: ***
+    :param mapping_2:
+    :param mapping_1:
+    :param matches:
+    :return: tp, fp, fn, tn
+    """
+
+    tp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 1
+    fp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 0
+    fn_mask = matches[ones]
+
+    tp = np.array(list(mapping_1.values()))[tp_mask].tolist()
+    fp = np.array(list(mapping_1.values()))[fp_mask].tolist()
+
+    return tp, tn
+
+
+def confusion_matrix(matches, mapping_1, mapping_2):
+    """
+
+    :param mapping_2:
+    :param mapping_1:
+    :param matches:
+    :return: tp, fp, fn, tn
+    """
+    tp = np.sum(matches[list(mapping_1.values()), list(mapping_2.values())])
+    fn = np.sum(matches[list(mapping_1.values()), list(mapping_2.values())] == 0)
+    fp = np.sum(np.sum(matches) - tp)
+    tn = np.sum(matches == 0) - fn - tp
+
+    return tp, fp, fn, tn
+
+
+def map_embeddings_probabilities(emb_1, emb_2, use_softmax=False):
+    def softmax(x):
+        """Compute softmax values for each sets of scores in x."""
+        return np.exp(x) / np.sum(np.exp(x), axis=0)
+    d_m = distance_matrix(emb_1, emb_2)
+    p = d_m / np.sum(d_m, axis=1) if not use_softmax else np.apply_along_axis(softmax, 1, d_m)
+    return p
