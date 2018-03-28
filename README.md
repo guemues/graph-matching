@@ -2,10 +2,6 @@ This repository created for a semester project at EPFL.
 
 Feedback 1:
 
-Hello Orçun,
-
-My Github username is: trouleau
-
 And by the way, you have access to room BC 255 if you want a place to work. You can go there whenever you want, your Camipro card should open the door. Otherwise I can show you around whenever you want.
 
 
@@ -27,9 +23,6 @@ Here are a couple more feedback following our meeting (some of it we already dis
 
 
 I can give you more clarifications if something is not clear.
-
-Best,
-Wiliam
 
 
 Feedback 2:
