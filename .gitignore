@@ -108,3 +108,4 @@ _*.py
 .DS_Store
 data/
 results/
+.vscode
