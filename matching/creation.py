@@ -49,6 +49,7 @@ class EmbeddingType(Enum):
     GF = "GF"
     LaplacianEigenmaps = "LE"
     DegreeDistribution = "DEGREE"
+    DegreeNeigDistribution = "NEIGDEGREE"
 
 
 class RandomGraphType(Enum):
@@ -156,6 +157,9 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
         embedding_alg = LaplacianEigenmaps(d=dimension_count)
     elif embedding_algorithm_enum is EmbeddingType.DegreeDistribution:
         A = np.array([np.histogram([graph.degree(i)] + [graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        return A
+    elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistribution:
+        A = np.array([np.histogram([graph.degree(i)] + [graph.degree(neig) for neig in graph.neighbors(i)] + [graph.degree(neigneig) for neigneig in graph.neighbors(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
         return A
     else:
         raise NotImplementedError
