@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """In this file i will create 100 * 10 noisy version of a main graph then compare the distances of the embedings."""
+import pickle
 
 __author__ = "Orcun Gumus"
 
@@ -13,6 +14,10 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description='Process some integers.')
+
+parser.add_argument('--run', dest='run', type=bool, help='')
+parser.add_argument('--id', dest='id', type=str, help='')
+
 
 parser.add_argument('--rgt', dest='random_graph_type', type=RandomGraphType, choices=list(RandomGraphType), help='')
 parser.add_argument('--et', dest='embedding_type', type=EmbeddingType, choices=list(EmbeddingType), help='')
@@ -34,6 +39,12 @@ file_name = './results/{}.pickle'.format(test_id)
 
 if __name__ == '__main__':
 
+    if args.run:
+        with open('./results/{}'.format(args.id), 'rb') as f:
+            simulation: Simulation = pickle.load(f)
+        simulation.run_nodes_mapping()
+        simulation.save()
+    else:
     simulation = Simulation(
         dimension_count=args.dimension_count,
         node_count=args.node_count,
