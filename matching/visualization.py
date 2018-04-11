@@ -44,27 +44,26 @@ def confusion(simulation, node_degrees, degree_counts, threshold_ratio=0.040, no
     new_frame['greater_true_negative'] = new_frame.loc[::-1, 'true_negative'].cumsum()[::-1]
 
     new_frame['precision'] = new_frame['true_positive'] / (new_frame['true_positive'] + new_frame['false_negative'])
-    new_frame['sensivity'] = new_frame['true_positive'] / (new_frame['true_positive'] + new_frame['false_positive'])
+    new_frame['sensitivity'] = new_frame['true_positive'] / (new_frame['true_positive'] + new_frame['false_positive'])
     new_frame['accuracy'] = (new_frame['true_positive'] + new_frame['true_negative']) / (
             new_frame['true_positive'] + new_frame['true_negative'] + new_frame['false_positive'] + new_frame[
         'false_negative'])
 
     new_frame['greater_precision'] = new_frame['greater_true_positive'] / (
             new_frame['greater_true_positive'] + new_frame['greater_false_negative'])
-    new_frame['greater_sensivity'] = new_frame['greater_true_positive'] / (
+    new_frame['greater_sensitivity'] = new_frame['greater_true_positive'] / (
             new_frame['greater_true_positive'] + new_frame['greater_false_positive'])
     new_frame['greater_accuracy'] = (new_frame['greater_true_positive'] + new_frame['greater_true_negative']) / (
-            new_frame['greater_true_positive'] + new_frame['greater_true_negative'] + new_frame[
-        'greater_false_positive'] + new_frame['greater_false_negative'])
+            new_frame['greater_true_positive'] + new_frame['greater_true_negative'] + new_frame['greater_false_positive'] + new_frame['greater_false_negative'])
 
     new_frame = new_frame.reset_index()
 
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(17, 6))
-    ax1.set_title('Precision Sensivity Graph')
-    ax1.set(xlabel='Node Degree', ylabel='Precision / Sensivity')
+    ax1.set_title('Precision Sensitivity Graph')
+    ax1.set(xlabel='Node Degree', ylabel='Precision / Sensitivity')
 
     ax1.plot('degree', 'greater_precision', data=new_frame, marker='o', label='Precision')
-    ax1.plot('degree', 'greater_sensivity', data=new_frame, marker='o', label='Sensivity')
+    ax1.plot('degree', 'greater_sensitivity', data=new_frame, marker='o', label='Sensitivity')
 
     ax2.plot('degree', 'greater_accuracy', data=new_frame, color='gray', marker='o', label='Accuracy')
     ax2.set_title('Accuracy Graph')
@@ -116,9 +115,11 @@ def degree_distribution(simulation, field='degree'):
 def accuracy_and_power_for_noise(simulation, edge_removal_possibility):
     accuracy_frame = simulation.accuracy_frame
 
-    accuracy_frame = accuracy_frame[accuracy_frame['edge_removal_possibility'] == edge_removal_possibility].groupby('threshold_ratio').mean()
+    accuracy_frame = accuracy_frame[accuracy_frame['edge_removal_possibility'] == edge_removal_possibility].groupby(
+        'threshold_ratio').mean()
 
-    accuracy_frame['accuracy'] = accuracy_frame['true_positive'] / (accuracy_frame['true_positive'] + accuracy_frame['false_positive'])
+    accuracy_frame['accuracy'] = accuracy_frame['true_positive'] / (
+                accuracy_frame['true_positive'] + accuracy_frame['false_positive'])
     accuracy_frame['power'] = accuracy_frame['true_positive'] / 1000
 
     accuracy_frame = accuracy_frame[accuracy_frame.accuracy > 0.1]
@@ -136,9 +137,11 @@ def accuracy_and_power_for_noise(simulation, edge_removal_possibility):
 def accuracy_and_power_for_threshold(simulation, threshold_ratio):
     accuracy_frame = simulation.accuracy_frame
 
-    accuracy_frame = accuracy_frame[accuracy_frame['threshold_ratio'] == threshold_ratio].groupby('edge_removal_possibility').mean()
+    accuracy_frame = accuracy_frame[accuracy_frame['threshold_ratio'] == threshold_ratio].groupby(
+        'edge_removal_possibility').mean()
 
-    accuracy_frame['accuracy'] = accuracy_frame['true_positive'] / (accuracy_frame['true_positive'] + accuracy_frame['false_positive'])
+    accuracy_frame['accuracy'] = accuracy_frame['true_positive'] / (
+                accuracy_frame['true_positive'] + accuracy_frame['false_positive'])
     accuracy_frame['power'] = accuracy_frame['true_positive'] / 1000
 
     fig = plt.figure(figsize=(10, 5))

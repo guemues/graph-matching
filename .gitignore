@@ -109,3 +109,4 @@ _*.py
 data/
 results/
 .vscode
+*.csv

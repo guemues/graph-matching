@@ -155,7 +155,7 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
     elif embedding_algorithm_enum is EmbeddingType.LaplacianEigenmaps:
         embedding_alg = LaplacianEigenmaps(d=dimension_count)
     elif embedding_algorithm_enum is EmbeddingType.DegreeDistribution:
-        A = np.array([np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        A = np.array([np.histogram([graph.degree(i)] + [graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
         return A
     else:
         raise NotImplementedError

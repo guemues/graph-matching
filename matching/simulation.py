@@ -140,11 +140,11 @@ class Simulation(object):
                     result = pd.concat([result, results_current])
 
                     if self.verbose:
-                        print('%{} completed for run'.format(int(current_calculation / total_calculation * 100)))
+                        print('%{} completed for run'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
         return result
 
     def run_nodes_mapping(self):
-        self.nodes_mapping = self._run(mapping_dataframe)
+        self.nodes_mapping  = self._run(mapping_dataframe)
 
 #
 # def run_accuracy_tests(self):
