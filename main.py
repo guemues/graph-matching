@@ -45,20 +45,20 @@ if __name__ == '__main__':
         simulation.run_nodes_mapping()
         simulation.save()
     else:
-    simulation = Simulation(
-        dimension_count=args.dimension_count,
-        node_count=args.node_count,
-        edge_probability=args.edge_probability,
-        step=args.step,
-        sample_size=args.sample_size,
-        maximum_noise=args.maximum_noise,
-        embedding_type=args.embedding_type,
-        graph_type=args.random_graph_type,
-        test_id=test_id
-    )
-    # simulation.run_nodes_mapping()
-    # simulation.run_correct_node_probability()
-    # simulation.run_accuracy_tests()
-    # simulation.run_distances_tests()
-    simulation.save()
+        simulation = Simulation(
+            dimension_count=args.dimension_count,
+            node_count=args.node_count,
+            edge_probability=args.edge_probability,
+            step=args.step,
+            sample_size=args.sample_size,
+            maximum_noise=args.maximum_noise,
+            embedding_type=args.embedding_type,
+            graph_type=args.random_graph_type,
+            test_id=test_id
+        )
+        # simulation.run_nodes_mapping()
+        # simulation.run_correct_node_probability()
+        # simulation.run_accuracy_tests()
+        # simulation.run_distances_tests()
+        simulation.save()
 
