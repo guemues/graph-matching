@@ -48,8 +48,9 @@ class EmbeddingType(Enum):
     Hope = "HOPE"
     GF = "GF"
     LaplacianEigenmaps = "LE"
-    DegreeDistribution = "DEGREE"
+    DegreeNeigDistributionWithout = "NEIGDEGREEWITHOUT"
     DegreeNeigDistribution = "NEIGDEGREE"
+    DegreeNeigNeigDistribution = "NEIGNEIGDEGREE"
 
 
 class RandomGraphType(Enum):
@@ -155,11 +156,18 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
         embedding_alg = GraphFactorization(d=dimension_count, max_iter=100000, eta=1 * 10 ** -4, regu=1.0)
     elif embedding_algorithm_enum is EmbeddingType.LaplacianEigenmaps:
         embedding_alg = LaplacianEigenmaps(d=dimension_count)
-    elif embedding_algorithm_enum is EmbeddingType.DegreeDistribution:
-        A = np.array([np.histogram([graph.degree(i)] + [graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+
+    elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistributionWithout:
+        A = np.array([np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
         return A
+
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistribution:
-        A = np.array([np.histogram([graph.degree(i)] + [graph.degree(neig) for neig in graph.neighbors(i)] + [graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        A = np.array( [[graph.degree(i)] + np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count - 1, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        return A
+
+    elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
+        A = np.array( [[graph.degree(i)] + np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int((dimension_count - 1)/2), density=True, range=(lower, higher))[0] + np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int((dimension_count - 1)/2), density=True, range=(lower, higher))[0] for i in graph.nodes()])
+
         return A
     else:
         raise NotImplementedError
