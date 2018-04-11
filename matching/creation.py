@@ -100,6 +100,7 @@ class MainGraph(Graph):
         self.degree_dist = list(dict(nx_graph.degree).values())
 
         self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.min_degree, self.max_degree)
+        print()
 
     @property
     def embeddings(self):
@@ -162,11 +163,11 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistribution:
-        A = np.array([np.concatenate([np.array([graph.degree(i) / higher]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count - 1, density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
+        A = np.array([np.concatenate([np.array([graph.degree(i) / (higher * 10)]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count - 1, density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
-        A = np.array( [np.concatenate([np.array([graph.degree(i) / higher]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0] , np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
+        A = np.array( [np.concatenate([np.array([graph.degree(i) / (higher * 10)]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0] , np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
 
         return A
     else:
