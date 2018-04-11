@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     if args.run:
         with open('./results/{}'.format(args.id), 'rb') as f:
-            simulation: Simulation = pickle.load(f)
+            simulation = pickle.load(f)
         simulation.run_nodes_mapping()
         simulation.save()
     else:
