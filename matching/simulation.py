@@ -26,6 +26,7 @@ class Simulation(object):
             maximum_noise,
             embedding_type,
             graph_type,
+            max_threshold,
             test_id,
             verbose=True
     ):
@@ -45,7 +46,7 @@ class Simulation(object):
         self.degree_c = None
 
         self.nodes_mapping = pd.DataFrame()
-
+        self.max_threshold = max_threshold
         self.test_id = test_id
 
         self.verbose = verbose
@@ -135,7 +136,7 @@ class Simulation(object):
                     if idx_2 <= idx_1:
                         continue
                     distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                    results_current = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise)
+                    results_current = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, )
 
                     result = pd.concat([result, results_current])
 

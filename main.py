@@ -29,6 +29,7 @@ parser.add_argument('--n', dest='node_count', type=int, help='')
 parser.add_argument('--step', dest='step', type=float, help='')
 parser.add_argument('--s', dest='sample_size', type=int, help='')
 parser.add_argument('--mn', dest='maximum_noise', type=float, help='')
+parser.add_argument('--mt', dest='max_threshold', type=float, help='')
 
 
 args = parser.parse_args()
@@ -53,6 +54,7 @@ if __name__ == '__main__':
             sample_size=args.sample_size,
             maximum_noise=args.maximum_noise,
             embedding_type=args.embedding_type,
+            max_threshold=args.max_threshold,
             graph_type=args.random_graph_type,
             test_id=test_id
         )
