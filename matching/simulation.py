@@ -8,11 +8,12 @@ import json
 import os
 import numpy as np
 import pandas as pd
-import pickle
+import collections
 
 RESULTS_FOLDER = './results'
 RESULTS_JSON_FILENAME = 'info.json'
 RESULTS_JSON_FILENAME_FULL = os.path.join(RESULTS_FOLDER, RESULTS_JSON_FILENAME)
+
 
 class Simulation(object):
 
@@ -22,6 +23,7 @@ class Simulation(object):
             node_count,
             edge_probability,
             step,
+            main_graph_sample_size,
             sample_size,
             maximum_noise,
             embedding_type,
@@ -36,14 +38,18 @@ class Simulation(object):
         self.step = step
         self.sample_size = sample_size
         self.maximum_noise = maximum_noise
+
+        self.noises = list(np.arange(0, self.maximum_noise, self.step))
+
         self.embedding_type = embedding_type
         self.graph_type = graph_type
+        self.main_graph_sample_size = main_graph_sample_size
 
-        self.main_graph = None
-        self.noisy_graphs = None
+        self.main_graphs = []
+        self.noisy_graphs = []
 
-        self.degree = None
-        self.degree_c = None
+        self.degrees = []
+        self.degrees_count = []
 
         self.nodes_mapping = pd.DataFrame()
         self.max_threshold = max_threshold
@@ -86,62 +92,64 @@ class Simulation(object):
 
     def _create_graphs(self):
 
-        if self.main_graph:
+        if len(self.main_graphs) > 0:
             print("No need for create graphs; they are already created.")
             return
 
-        main_nx_graph = create_main_graph(
-            graph_type=self.graph_type,
-            node_count=self.node_count,
-            edge_probability=self.edge_probability
-        )
+        for _ in range(self.main_graph_sample_size):
+            main_nx_graph = create_main_graph(
+                graph_type=self.graph_type,
+                node_count=self.node_count,
+                edge_probability=self.edge_probability
+            )
+            main_graph = MainGraph(
+                nx_graph=main_nx_graph,
+                edge_probability=self.edge_probability,
+                node_count=self.node_count,
+                embedding_algorithm_enum=self.embedding_type,
+                dimension_count=self.dimension_count
+            )
+            self.main_graphs.append(main_graph)
 
-        self.main_graph = MainGraph(
-            nx_graph=main_nx_graph,
-            edge_probability=self.edge_probability,
-            node_count=self.node_count,
-            embedding_algorithm_enum=self.embedding_type,
-            dimension_count=self.dimension_count
-        )
+            self.degrees.append(dict(main_nx_graph.degree))
+            self.degrees_count.append(dict(collections.Counter(sorted([d for n, d in main_nx_graph.degree()], reverse=True))))
+            # for main_nx_graph.degree
+            # self.degree_c = degree_centrality(main_nx_graph)
 
-        self.degree = main_nx_graph.degree
-        self.degree_c = degree_centrality(main_nx_graph)
-
-        self.noisy_graphs = [
-            [
-                NoisyGraph(
-                    main_graph=self.main_graph,
-                    edge_probability=self.edge_probability,
-                    node_count=self.node_count,
-                    edge_removal_probability=edge_removal_probability,
-                    embedding_algorithm_enum=self.embedding_type,
-                    dimension_count=self.dimension_count
-                ) for _ in range(self.sample_size)] for edge_removal_probability in
-            np.arange(0, self.maximum_noise, self.step)]
+            self.noisy_graphs.append([[
+                    NoisyGraph(
+                        main_graph=main_graph,
+                        edge_probability=self.edge_probability,
+                        node_count=self.node_count,
+                        edge_removal_probability=edge_removal_probability,
+                        embedding_algorithm_enum=self.embedding_type,
+                        dimension_count=self.dimension_count
+                    ) for _ in range(self.sample_size)] for edge_removal_probability in self.noises])
 
     def _run(self, compare_function):
-        total_calculation = len(self.noisy_graphs) * self.sample_size * self.sample_size
+        total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size
         current_calculation = 0
         result = pd.DataFrame()
-        for noisy_graph_bucket in self.noisy_graphs:
 
-            for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
-                for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
+        for main_graph_idx, noisy_graph_samples in enumerate(self.noisy_graphs):
+            for noisy_graph_bucket in noisy_graph_samples:
+                for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
+                    for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
 
-                    current_calculation += 1
+                        current_calculation += 1
 
-                    assert isinstance(noisy_graph, NoisyGraph)
-                    assert isinstance(compare_noisy_graph, NoisyGraph)
+                        assert isinstance(noisy_graph, NoisyGraph)
+                        assert isinstance(compare_noisy_graph, NoisyGraph)
 
-                    if idx_2 <= idx_1:
-                        continue
-                    distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                    results_current = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, )
+                        if idx_2 <= idx_1:
+                            continue
+                        distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
+                        results_current = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, self.degrees[main_graph_idx], main_graph_idx)
 
-                    result = pd.concat([result, results_current])
+                        result = pd.concat([result, results_current])
 
-                    if self.verbose:
-                        print('%{} completed for run'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
+                        if self.verbose:
+                            print('%{} completed for run'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
         return result
 
     def run_nodes_mapping(self):

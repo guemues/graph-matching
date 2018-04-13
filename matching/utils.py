@@ -7,7 +7,7 @@ import pandas as pd
 from matching import match_using_threshold, confusion_matrix
 
 
-def mapping_dataframe(distances,  mapping_1, mapping_2, noise, max_threshold=0.05):
+def mapping_dataframe(distances,  mapping_1, mapping_2, noise, degrees, main_graph, max_threshold=0.05):
     """
 
     :param distances: For every node i and j in main graph G distance matrix
@@ -29,7 +29,7 @@ def mapping_dataframe(distances,  mapping_1, mapping_2, noise, max_threshold=0.0
     """
 
     df = pd.DataFrame()
-    for threshold_ratio in np.arange(0, max_threshold, 0.005):
+    for threshold_ratio in np.arange(0, max_threshold, 0.01):
         match = match_using_threshold(distances, threshold_ratio)
         i_noisy, j_noisy = np.where(match == 1)
 
@@ -40,8 +40,10 @@ def mapping_dataframe(distances,  mapping_1, mapping_2, noise, max_threshold=0.0
             data={
                 "threshold_ratio": threshold_ratio,
                 "noise": noise,
-                "node_1": np.vectorize(mapping_1.get)(i_noisy),
-                "node_2": np.vectorize(mapping_2.get)(j_noisy)
+                "correctness": np.vectorize(lambda x: str(x).upper())(i_noisy == j_noisy),
+                "node_degree_1": np.vectorize(dict(degrees).get)(np.vectorize(mapping_1.get)(i_noisy)),
+                "node_degree_2": np.vectorize(dict(degrees).get)(np.vectorize(mapping_2.get)(j_noisy)),
+                "main_graph": main_graph
             })
         ])
     return df.reset_index()

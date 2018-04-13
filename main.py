@@ -30,6 +30,7 @@ parser.add_argument('--step', dest='step', type=float, help='')
 parser.add_argument('--s', dest='sample_size', type=int, help='')
 parser.add_argument('--mn', dest='maximum_noise', type=float, help='')
 parser.add_argument('--mt', dest='max_threshold', type=float, help='')
+parser.add_argument('--ms', dest='main_sample', type=int, help='')
 
 
 args = parser.parse_args()
@@ -40,17 +41,16 @@ file_name = './results/{}.pickle'.format(test_id)
 
 if __name__ == '__main__':
 
-    if args.run:
+    if args.id:
         with open('./results/{}'.format(args.id), 'rb') as f:
             simulation = pickle.load(f)
-        simulation.run_nodes_mapping()
-        simulation.save()
     else:
         simulation = Simulation(
             dimension_count=args.dimension_count,
             node_count=args.node_count,
             edge_probability=args.edge_probability,
             step=args.step,
+            main_graph_sample_size=args.main_sample,
             sample_size=args.sample_size,
             maximum_noise=args.maximum_noise,
             embedding_type=args.embedding_type,
@@ -58,9 +58,12 @@ if __name__ == '__main__':
             graph_type=args.random_graph_type,
             test_id=test_id
         )
-        # simulation.run_nodes_mapping()
-        # simulation.run_correct_node_probability()
-        # simulation.run_accuracy_tests()
-        # simulation.run_distances_tests()
-        simulation.save()
+    if args.run:
+        simulation.run_nodes_mapping()
+
+    # simulation.run_nodes_mapping()
+    # simulation.run_correct_node_probability()
+    # simulation.run_accuracy_tests()
+    # simulation.run_distances_tests()
+    simulation.save()
 
