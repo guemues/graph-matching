@@ -130,7 +130,8 @@ class Simulation(object):
                         embedding_algorithm_enum=self.embedding_type,
                         dimension_count=self.dimension_count
                     ) for _ in range(self.sample_size)] for edge_removal_probability in self.noises])
-
+            print()
+            print()
     def _run(self, compare_function):
         total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size
         current_calculation = 0
@@ -164,7 +165,7 @@ class Simulation(object):
             mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises,
                                                list(degree_count.keys()))
             mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
-            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts)
+            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
             mapping_df_find_node_counts['main_graph'] = main_graph_idx
             result = pd.concat([result, mapping_df_find_node_counts])
 

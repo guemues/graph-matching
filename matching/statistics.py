@@ -121,11 +121,12 @@ def find_corrects_not_corrects(mapping_df_find_counts):
     return _
 
 
-def find_node_counts(mappings_df_find_corrects_not_corrects, degrees_counts):
+def find_node_counts(mappings_df_find_corrects_not_corrects, degrees_counts, size):
     _ = mappings_df_find_corrects_not_corrects.copy().reset_index()
     _[['degree']] = _[['degree']].astype(int)
     _ = _.set_index(['degree'])
     _ = degrees_counts.join(_)
+    _[['node_count']] = _[['node_count']] * size
     _[['node_count']] = _[['node_count']].astype(int)
     return _.reset_index()
 
