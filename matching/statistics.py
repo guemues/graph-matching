@@ -2,9 +2,29 @@
 # This file contains pandas operations
 
 import pandas as pd
+import numpy as np
+import itertools
+
+def find_degree_counts(degree_count):
+    #                   node_count
+    # main_graph degree
+    # 0          162             1
+    #            139             2
+    #            132             1
+    #            131             1
+    #            130             1
+
+    _ = pd.DataFrame(columns=['degree', 'node_count'])
+
+    for degree, count in degree_count.items():
+        _ = _.append({
+            'degree': int(degree),
+            'node_count': int(count)}, ignore_index=True)
+    return _.set_index(['degree'])
 
 
-def find_degree_counts(degrees_count):
+
+def find_degree_counts_(degrees_count):
     #                   node_count
     # main_graph degree
     # 0          162             1
@@ -43,10 +63,50 @@ def find_counts(mapping_df_with_node_degree_count):
     _ = mapping_df_with_node_degree_count.copy()
     _ = _.rename(index=str, columns={'node_degree_1': 'degree'})
 
+    _ = _.reset_index()[['noise', 'threshold_ratio', 'degree', 'correctness', 'index']]
+    _ = _.groupby(['threshold_ratio', 'noise', 'correctness', 'degree'])['index'].count().reset_index().rename(columns={'index': 'count'})
+
+    _[['threshold_ratio', 'noise', 'degree']] = _[['threshold_ratio', 'noise', 'degree']].astype(str)
+    return _
+
+
+def find_counts_(mapping_df_with_node_degree_count):
+    #                                correctness  node_count_1  \
+    # threshold_ratio noise degree_1
+    # 0.005           0.0   10             FALSE           540
+    #                       10              TRUE          7065
+    #                       11             FALSE           270
+    #                       11              TRUE          5805
+    #                       12             FALSE           180
+    #
+    #                                 greater_degree_count_1
+    # threshold_ratio noise degree_1
+    # 0.005           0.0   10                           540
+    #                       10                          7065
+    #                       11                           270
+    #                       11                          5805
+    #                       12                           180
+    _ = mapping_df_with_node_degree_count.copy()
+    _ = _.rename(index=str, columns={'node_degree_1': 'degree'})
+
     _ = _.reset_index()[['noise', 'threshold_ratio', 'degree', 'correctness', 'main_graph', 'index']]
     _ = _.groupby(['threshold_ratio', 'noise', 'correctness', 'main_graph', 'degree'])['index'].count().reset_index(
         ['correctness']).rename(columns={'index': 'count'})
     return _
+
+
+def fill_empty(mapping_df_find_counts, thresholds, noises, degrees):
+    all_possible_index = [i for i in itertools.product(thresholds, noises, degrees, ['TRUE', 'FALSE'])]
+    np_all_possible_index = np.array(all_possible_index)
+
+    empty_df = pd.DataFrame(data={'threshold_ratio': np_all_possible_index[:, 0], 'noise': np_all_possible_index[:, 1],
+                                  'degree': np_all_possible_index[:, 2],
+                                  'correctness': np_all_possible_index[:, 3], 'count': [0] * len(np_all_possible_index)})
+    _ = empty_df.join(
+        mapping_df_find_counts.reset_index().set_index(['threshold_ratio', 'noise', 'degree', 'correctness']),
+        on=['threshold_ratio', 'noise', 'degree', 'correctness'], lsuffix='l')
+    _ = _.fillna(0)
+    return _.drop(['countl'], axis=1).set_index(['threshold_ratio', 'noise', 'degree'])
 
 
 def find_corrects_not_corrects(mapping_df_find_counts):
@@ -59,6 +119,15 @@ def find_corrects_not_corrects(mapping_df_find_counts):
     _ = _.drop(['correctness', 'correctness_f'], axis=1)
 
     return _
+
+
+def find_node_counts(mappings_df_find_corrects_not_corrects, degrees_counts):
+    _ = mappings_df_find_corrects_not_corrects.copy().reset_index()
+    _[['degree']] = _[['degree']].astype(int)
+    _ = _.set_index(['degree'])
+    _ = degrees_counts.join(_)
+    _[['node_count']] = _[['node_count']].astype(int)
+    return _.reset_index()
 
 
 def find_sum(mappings_df_find_node_counts):

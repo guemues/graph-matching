@@ -7,7 +7,7 @@ import pandas as pd
 from matching import match_using_threshold, confusion_matrix
 
 
-def mapping_dataframe(distances,  mapping_1, mapping_2, noise, degrees, main_graph, max_threshold=0.05):
+def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, degrees, main_graph):
     """
 
     :param distances: For every node i and j in main graph G distance matrix
@@ -29,7 +29,7 @@ def mapping_dataframe(distances,  mapping_1, mapping_2, noise, degrees, main_gra
     """
 
     df = pd.DataFrame()
-    for threshold_ratio in np.arange(0, max_threshold, 0.01):
+    for threshold_ratio in thresholds:
         match = match_using_threshold(distances, threshold_ratio)
         i_noisy, j_noisy = np.where(match == 1)
 
