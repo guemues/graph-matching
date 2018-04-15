@@ -132,7 +132,11 @@ class Simulation(object):
                     ) for _ in range(self.sample_size)] for edge_removal_probability in self.noises])
             print()
             print()
+
     def _run(self, compare_function):
+
+        self.main_graphs.clear()
+
         total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size
         current_calculation = 0
         result = pd.DataFrame()
