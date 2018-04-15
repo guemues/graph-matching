@@ -87,13 +87,15 @@ class Simulation(object):
             'embedding_type': self.embedding_type.name,
             'graph_type': self.graph_type.name
         }
-
-        with open(RESULTS_JSON_FILENAME_FULL, 'w') as results_file:
-            json.dump(results, results_file, indent=2)
-
-        filename = os.path.join(RESULTS_FOLDER, self.test_id)
-
-        nx.write_gpickle(self, filename)
+        filename = os.path.join(RESULTS_FOLDER, str(self.test_id) + '.csv')
+        self.nodes_mapping.to_csv(filename)
+        #
+        # with open(RESULTS_JSON_FILENAME_FULL, 'w') as results_file:
+        #     json.dump(results, results_file, indent=2)
+        #
+        # filename = os.path.join(RESULTS_FOLDER, self.test_id)
+        #
+        # nx.write_gpickle(self, filename)
 
     def _create_graphs(self):
 

@@ -136,6 +136,7 @@ class NoisyGraph(Graph):
 
         self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.main_graph.min_degree, self.main_graph.max_degree)
         del self.graph
+        self.graph = None
 
     @property
     def main_embeddings(self):
