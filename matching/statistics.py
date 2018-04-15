@@ -142,8 +142,6 @@ def find_tp_fp_fn_tn(mapping_df_find_total_degree_node):
     _['true_positive'] = _['corrects']
     _['false_positive'] = _['not_corrects']
     _['false_negative'] = _['node_count'] - _['corrects']
-    _['true_negative'] = (_['node_count'] * (_['node_count'] - 1)) - _['not_corrects']
-    _ = _[['true_positive', 'false_positive', 'false_negative', 'true_negative', 'node_count']]
     return _
 
 

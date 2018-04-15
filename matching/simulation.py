@@ -42,7 +42,7 @@ class Simulation(object):
         self.maximum_noise = maximum_noise
 
         self.noises = list(np.arange(0, self.maximum_noise, self.step))
-        self.thresholds = np.arange(0.01, max_threshold, 0.01)
+        self.thresholds = np.arange(0.02, max_threshold, 0.02)
 
         self.embedding_type = embedding_type
         self.graph_type = graph_type
@@ -173,6 +173,7 @@ class Simulation(object):
             mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
             mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
             mapping_df_find_node_counts['main_graph'] = main_graph_idx
+            mapping_df_find_node_counts = mapping_df_find_node_counts.drop(['index', 'index_f'], axis=1)
             result = pd.concat([result, mapping_df_find_node_counts])
 
         return result
