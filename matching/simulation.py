@@ -24,25 +24,32 @@ class Simulation(object):
             dimension_count,
             node_count,
             edge_probability,
-            step,
+            noise_step,
             main_graph_sample_size,
             sample_size,
             maximum_noise,
             embedding_type,
             graph_type,
+
+            th_step,
             max_threshold,
+
+
             test_id,
             verbose=True
     ):
         self.dimension_count = dimension_count
         self.node_count = node_count
         self.edge_probability = edge_probability
-        self.step = step
+        self.noise_step = noise_step
+
+        self.th_step = th_step
+
         self.sample_size = sample_size
         self.maximum_noise = maximum_noise
 
-        self.noises = list(np.arange(0, self.maximum_noise, self.step))
-        self.thresholds = np.arange(0.02, max_threshold, 0.02)
+        self.noises = list(np.arange(0, self.maximum_noise, self.noise_step))
+        self.thresholds = np.arange(self.th_step, max_threshold, self.th_step)
 
         self.embedding_type = embedding_type
         self.graph_type = graph_type
@@ -81,7 +88,7 @@ class Simulation(object):
             'dimension_count': self.dimension_count,
             'node_count': self.node_count,
             'edge_probability': self.edge_probability,
-            'step': self.step,
+            'step': self.noise_step,
             'sample_size': self.sample_size,
             'maximum_noise': self.maximum_noise,
             'embedding_type': self.embedding_type.name,

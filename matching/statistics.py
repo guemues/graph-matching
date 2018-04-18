@@ -137,7 +137,7 @@ def find_sum(mappings_df_find_node_counts):
     return _
 
 
-def find_tp_fp_fn_tn(mapping_df_find_total_degree_node):
+def find_tp_fp_fn(mapping_df_find_total_degree_node):
     _ = mapping_df_find_total_degree_node.copy()
     _['true_positive'] = _['corrects']
     _['false_positive'] = _['not_corrects']
