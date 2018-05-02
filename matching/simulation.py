@@ -125,6 +125,19 @@ class Simulation(object):
             self.degrees_count.append(dict(collections.Counter(sorted([d for n, d in main_nx_graph.degree()], reverse=True))))
             # for main_nx_graph.degree
             # self.degree_c = degree_centrality(main_nx_graph)
+            for jdx, edge_removal_probability in enumerate(self.noises):
+                noisy_graphs_same_noise = [
+                    NoisyGraph(
+                        main_graph=main_graph,
+                        edge_probability=self.edge_probability,
+                        node_count=self.node_count,
+                        edge_removal_probability=edge_removal_probability,
+                        embedding_algorithm_enum=self.embedding_type,
+                        dimension_count=self.dimension_count,
+                        hyperparameter=self.hyperparameter
+                    ) for _ in range(self.sample_size)]
+                if self.verbose:
+                    print("{} of creation completed...".format((_ * len(self.noises) + jdx) / (self.main_graph_sample_size * len(self.noises))),  end="\r", flush=True)
 
             self.noisy_graphs.append([[
                     NoisyGraph(
@@ -167,7 +180,7 @@ class Simulation(object):
                         graph_result = pd.concat([graph_result, small_result])
 
                         if self.verbose:
-                            print('%{} completed for run'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
+                            print('%{} of run completed...'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
 
             degree_count = self.degrees_count[main_graph_idx]
             degree_counts = find_degree_counts(degree_count)
