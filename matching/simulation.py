@@ -158,7 +158,7 @@ class Simulation(object):
 
         self.main_graphs.clear()
 
-        total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size
+        total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size * 5
         current_calculation = 0
         result = pd.DataFrame()
 
