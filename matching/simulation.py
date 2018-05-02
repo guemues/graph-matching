@@ -137,7 +137,7 @@ class Simulation(object):
                         hyperparameter=self.hyperparameter
                     ) for _ in range(self.sample_size)]
                 if self.verbose:
-                    print("{.2f}% of creation completed...".format((_ * len(self.noises) + jdx) / (self.main_graph_sample_size * len(self.noises)) * 100),  end="\r", flush=True)
+                    print("{:0.2f}% of creation completed...".format((_ * len(self.noises) + jdx) / (self.main_graph_sample_size * len(self.noises)) * 100),  end="\r", flush=True)
 
             self.noisy_graphs.append([[
                     NoisyGraph(
@@ -178,7 +178,7 @@ class Simulation(object):
                         graph_result = pd.concat([graph_result, small_result])
 
                         if self.verbose:
-                            print('{.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
+                            print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
 
             degree_count = self.degrees_count[main_graph_idx]
             degree_counts = find_degree_counts(degree_count)
