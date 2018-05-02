@@ -63,10 +63,10 @@ def find_counts(mapping_df_with_node_degree_count):
     _ = mapping_df_with_node_degree_count.copy()
     _ = _.rename(index=str, columns={'node_degree_1': 'degree'})
 
-    _ = _.reset_index()[['noise', 'threshold_ratio', 'degree', 'correctness', 'index']]
-    _ = _.groupby(['threshold_ratio', 'noise', 'correctness', 'degree'])['index'].count().reset_index().rename(columns={'index': 'count'})
+    _ = _.reset_index()[['noise', 'hyperparameter', 'threshold_ratio', 'degree', 'correctness', 'index']]
+    _ = _.groupby(['threshold_ratio', 'noise', 'hyperparameter', 'correctness', 'degree'])['index'].count().reset_index().rename(columns={'index': 'count'})
 
-    _[['threshold_ratio', 'noise', 'degree']] = _[['threshold_ratio', 'noise', 'degree']].astype(str)
+    _[['threshold_ratio', 'noise', 'hyperparameter', 'degree']] = _[['threshold_ratio', 'noise', 'hyperparameter', 'degree']].astype(str)
     return _
 
 
@@ -95,18 +95,20 @@ def find_counts_(mapping_df_with_node_degree_count):
     return _
 
 
-def fill_empty(mapping_df_find_counts, thresholds, noises, degrees):
-    all_possible_index = [i for i in itertools.product(thresholds, noises, degrees, ['TRUE', 'FALSE'])]
+def fill_empty(mapping_df_find_counts, thresholds, noises, hyperparameters, degrees):
+    all_possible_index = [i for i in itertools.product(thresholds, noises, hyperparameters, degrees, ['TRUE', 'FALSE'])]
     np_all_possible_index = np.array(all_possible_index)
 
-    empty_df = pd.DataFrame(data={'threshold_ratio': np_all_possible_index[:, 0], 'noise': np_all_possible_index[:, 1],
-                                  'degree': np_all_possible_index[:, 2],
-                                  'correctness': np_all_possible_index[:, 3], 'count': [0] * len(np_all_possible_index)})
+    empty_df = pd.DataFrame(data={'threshold_ratio': np_all_possible_index[:, 0],
+                                  'noise': np_all_possible_index[:, 1],
+                                  'hyperparameter': np_all_possible_index[:, 2],
+                                  'degree': np_all_possible_index[:, 3],
+                                  'correctness': np_all_possible_index[:, 4], 'count': [0] * len(np_all_possible_index)})
     _ = empty_df.join(
-        mapping_df_find_counts.reset_index().set_index(['threshold_ratio', 'noise', 'degree', 'correctness']),
-        on=['threshold_ratio', 'noise', 'degree', 'correctness'], lsuffix='l')
+        mapping_df_find_counts.reset_index().set_index(['threshold_ratio', 'noise', 'hyperparameter', 'degree', 'correctness']),
+        on=['threshold_ratio', 'noise', 'hyperparameter', 'degree', 'correctness'], lsuffix='l')
     _ = _.fillna(0)
-    return _.drop(['countl'], axis=1).set_index(['threshold_ratio', 'noise', 'degree'])
+    return _.drop(['countl'], axis=1).set_index(['threshold_ratio', 'noise', 'hyperparameter', 'degree'])
 
 
 def find_corrects_not_corrects(mapping_df_find_counts):
