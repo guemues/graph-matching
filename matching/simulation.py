@@ -92,7 +92,11 @@ class Simulation(object):
             'graph_type': self.graph_type.name,
             'hyperparameter': self.hyperparameter
         }
+        with open(RESULTS_JSON_FILENAME_FULL, 'w+') as fp:
+            json.dump(results, fp)
+
         filename = os.path.join(RESULTS_FOLDER, str(self.test_id) + '.csv')
+
         self.nodes_mapping.to_csv(filename)
         #
         # with open(RESULTS_JSON_FILENAME_FULL, 'w') as results_file:
