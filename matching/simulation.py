@@ -164,36 +164,37 @@ class Simulation(object):
 
         for main_graph_idx, noisy_graph_samples in enumerate(self.noisy_graphs):
             graph_result = pd.DataFrame()
+            for hyperparameter in [0.05, 0.1, 0.5, 0.75, 1]:
+                for noisy_graph_bucket in noisy_graph_samples:
+                    for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
+                        for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
 
-            for noisy_graph_bucket in noisy_graph_samples:
-                for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
-                    for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
+                            current_calculation += 1
 
-                        current_calculation += 1
+                            assert isinstance(noisy_graph, NoisyGraph)
+                            assert isinstance(compare_noisy_graph, NoisyGraph)
 
-                        assert isinstance(noisy_graph, NoisyGraph)
-                        assert isinstance(compare_noisy_graph, NoisyGraph)
+                            if idx_2 <= idx_1:
+                                continue
+                            distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
+                            small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, self.degrees[main_graph_idx], main_graph_idx)
+                            # Stats
+                            graph_result = pd.concat([graph_result, small_result])
 
-                        if idx_2 <= idx_1:
-                            continue
-                        distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                        small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, self.degrees[main_graph_idx], main_graph_idx)
-                        # Stats
-                        graph_result = pd.concat([graph_result, small_result])
+                            if self.verbose:
+                                print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
 
-                        if self.verbose:
-                            print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)),  end="\r", flush=True)
+                degree_count = self.degrees_count[main_graph_idx]
+                degree_counts = find_degree_counts(degree_count)
 
-            degree_count = self.degrees_count[main_graph_idx]
-            degree_counts = find_degree_counts(degree_count)
-
-            mapping_df_find_counts = find_counts(graph_result)
-            mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises, list(degree_count.keys()))
-            mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
-            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
-            mapping_df_find_node_counts['main_graph'] = main_graph_idx
-            mapping_df_find_node_counts = mapping_df_find_node_counts.drop(['index', 'index_f'], axis=1)
-            result = pd.concat([result, mapping_df_find_node_counts])
+                mapping_df_find_counts = find_counts(graph_result)
+                mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises, list(degree_count.keys()))
+                mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
+                mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
+                mapping_df_find_node_counts['main_graph'] = main_graph_idx
+                mapping_df_find_node_counts['hyperparameter'] = str(hyperparameter)
+                mapping_df_find_node_counts = mapping_df_find_node_counts.drop(['index', 'index_f'], axis=1)
+                result = pd.concat([result, mapping_df_find_node_counts])
 
         return result
 

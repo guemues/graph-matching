@@ -33,7 +33,6 @@ def create_hyperparameter_result(input_folder, output_file):
         for simulation_id in simulation_ids:
             _ = pd.read_csv(os.path.join(input_folder, str(simulation_id) + '.csv'))
             _['main_graph'] = str(simulation_id) + '_' + _['main_graph'].astype(str)
-            _['hyperparameter'] = str(hyperparameter)
             total = total.append(find_tp_fp_fn(_))
 
     total = total.drop(['Unnamed: 0'], axis=1)
