@@ -85,11 +85,8 @@ class MainGraph(Graph):
             self,
             nx_graph,
             edge_probability,
-            node_count,
-            embedding_algorithm_enum,
-            dimension_count
+            node_count
     ):
-        assert isinstance(embedding_algorithm_enum, EmbeddingType)
 
         super().__init__()
         self.edge_probability = edge_probability
@@ -98,13 +95,6 @@ class MainGraph(Graph):
         self.max_degree = max(dict(nx_graph.degree).values())
         self.min_degree = min(dict(nx_graph.degree).values())
         self.degree_dist = list(dict(nx_graph.degree).values())
-
-        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.min_degree, self.max_degree)
-        print()
-
-    @property
-    def embeddings(self):
-        return self.e
 
 
 class NoisyGraph(Graph):
@@ -117,6 +107,7 @@ class NoisyGraph(Graph):
             edge_removal_probability,
             embedding_algorithm_enum,
             dimension_count,
+            hyperparameter=1
     ):
         super().__init__()
 
@@ -134,20 +125,17 @@ class NoisyGraph(Graph):
 
         self.graph, self.mapping = create_noisy_graph(self.main_graph.graph, self.noise)
 
-        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, self.main_graph.min_degree, self.main_graph.max_degree)
+        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, hyperparameter, self.main_graph.min_degree, self.main_graph.max_degree)
+
         del self.graph
         self.graph = None
-
-    @property
-    def main_embeddings(self):
-        return self.main_graph.embeddings
 
     @property
     def embeddings(self):
         return self.e
 
 
-def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None, higher=None):
+def get_embeddings(graph, embedding_algorithm_enum, dimension_count, hyperparameter, lower=None, higher=None):
     """Generate embeddings. """
 
     if embedding_algorithm_enum is EmbeddingType.LocallyLinearEmbedding:
@@ -168,7 +156,13 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, lower=None,
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
-        A = np.array( [np.concatenate([np.array([graph.degree(i) / (higher * dimension_count)]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0] , np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count/2), density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
+        A = np.array( [
+            np.concatenate([np.array([
+                (1 / hyperparameter) * graph.degree(i) / (higher * dimension_count)]) ,
+                (1 / hyperparameter * hyperparameter) * np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0] ,
+                (1 / hyperparameter * hyperparameter * hyperparameter) * np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0]], axis=0)
+            for i in graph.nodes()]
+        )
 
         return A
     else:

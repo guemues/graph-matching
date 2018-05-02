@@ -36,13 +36,12 @@ parser.add_argument('--th-step', dest='th_step', type=float, help='')
 parser.add_argument('--mt', dest='max_threshold', type=float, help='')
 
 parser.add_argument('--ms', dest='main_sample', type=int, help='')
+parser.add_argument('--hp', dest='hyperparamater', type=float, help='')
 
 
 args = parser.parse_args()
 
 test_id = str(int(time.time()))
-
-file_name = './results/{}.pickle'.format(test_id)
 
 if __name__ == '__main__':
 
@@ -62,7 +61,8 @@ if __name__ == '__main__':
             th_step=args.th_step,
             max_threshold=args.max_threshold,
             graph_type=args.random_graph_type,
-            test_id=test_id
+            hyperparameter=args.hyperparamater,
+            test_id=test_id,
         )
     if args.run:
         simulation.run_nodes_mapping()

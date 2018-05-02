@@ -33,8 +33,7 @@ class Simulation(object):
 
             th_step,
             max_threshold,
-
-
+            hyperparameter,
             test_id,
             verbose=True
     ):
@@ -42,7 +41,7 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-
+        self.hyperparameter = hyperparameter
         self.th_step = th_step
 
         self.sample_size = sample_size
@@ -66,8 +65,6 @@ class Simulation(object):
         self.test_id = test_id
 
         self.verbose = verbose
-
-
         self._create_graphs()
 
     def load(self):
@@ -92,7 +89,8 @@ class Simulation(object):
             'sample_size': self.sample_size,
             'maximum_noise': self.maximum_noise,
             'embedding_type': self.embedding_type.name,
-            'graph_type': self.graph_type.name
+            'graph_type': self.graph_type.name,
+            'hyperparameter': self.hyperparameter
         }
         filename = os.path.join(RESULTS_FOLDER, str(self.test_id) + '.csv')
         self.nodes_mapping.to_csv(filename)
@@ -120,8 +118,6 @@ class Simulation(object):
                 nx_graph=main_nx_graph,
                 edge_probability=self.edge_probability,
                 node_count=self.node_count,
-                embedding_algorithm_enum=self.embedding_type,
-                dimension_count=self.dimension_count
             )
             self.main_graphs.append(main_graph)
 
@@ -137,7 +133,8 @@ class Simulation(object):
                         node_count=self.node_count,
                         edge_removal_probability=edge_removal_probability,
                         embedding_algorithm_enum=self.embedding_type,
-                        dimension_count=self.dimension_count
+                        dimension_count=self.dimension_count,
+                        hyperparameter=self.hyperparameter
                     ) for _ in range(self.sample_size)] for edge_removal_probability in self.noises])
             print()
             print()
@@ -174,9 +171,9 @@ class Simulation(object):
 
             degree_count = self.degrees_count[main_graph_idx]
             degree_counts = find_degree_counts(degree_count)
+
             mapping_df_find_counts = find_counts(graph_result)
-            mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises,
-                                               list(degree_count.keys()))
+            mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises, list(degree_count.keys()))
             mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
             mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
             mapping_df_find_node_counts['main_graph'] = main_graph_idx

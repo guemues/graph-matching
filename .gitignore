@@ -108,6 +108,7 @@ _*.py
 .DS_Store
 data/
 results/
+backup/
 .vscode
 *.csv
 *.twb
