@@ -158,9 +158,9 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, hyperparame
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
         A = np.array( [
             np.concatenate([np.array([
-                (1 / hyperparameter) * graph.degree(i) / (higher * dimension_count)]) ,
-                (1 / hyperparameter * hyperparameter) * np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0] ,
-                (1 / hyperparameter * hyperparameter * hyperparameter) * np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0]], axis=0)
+                (hyperparameter) * graph.degree(i) / (higher * dimension_count)]) ,
+                (hyperparameter * hyperparameter) * np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0] ,
+                (hyperparameter * hyperparameter * hyperparameter) * np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0]], axis=0)
             for i in graph.nodes()]
         )
 

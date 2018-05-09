@@ -1,6 +1,8 @@
 import argparse
 import os
 import json
+from os.path import isfile, join
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -20,20 +22,11 @@ with open(info_file_str) as info_file:
 
 
 def create_hyperparameter_result(input_folder, output_file):
-    hyperparamater_dict = {}
-
-    for simulation_id, simulation_dict in infos.items():
-        if simulation_dict['hyperparameter'] in hyperparamater_dict:
-            hyperparamater_dict[simulation_dict['hyperparameter']].append(simulation_id)
-        else:
-            hyperparamater_dict[simulation_dict['hyperparameter']] = [simulation_id]
-
     total: DataFrame = pd.DataFrame()
-    for hyperparameter, simulation_ids in hyperparamater_dict.items():
-        for simulation_id in simulation_ids:
-            _ = pd.read_csv(os.path.join(input_folder, str(simulation_id) + '.csv'))
-            _['main_graph'] = str(simulation_id) + '_' + _['main_graph'].astype(str)
-            total = total.append(find_tp_fp_fn(_))
+    for _ in [f for f in os.listdir('./results/') if isfile(join('./results/', f)) and '.csv' in f]:
+        a = pd.read_csv(os.path.join('./results/', _))
+        a['main_graph'] = str(_) + '_' + a['main_graph'].astype(str)
+        total = total.append(find_tp_fp_fn(a))
 
     total = total.drop(['Unnamed: 0'], axis=1)
 
