@@ -47,6 +47,10 @@ def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyper
                 "main_graph": main_graph
             })
         ])
+
+        if len(i_noisy) > 10000:
+            break
+
     return df.reset_index()
 
     #
