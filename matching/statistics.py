@@ -121,7 +121,7 @@ def find_corrects_not_corrects(mapping_df_find_counts):
 
 
 def find_node_counts(mappings_df_find_corrects_not_corrects , degrees_counts):
-    _ :pd.DataFrame= mappings_df_find_corrects_not_corrects.copy()
+    _ = mappings_df_find_corrects_not_corrects.copy()
     degrees_counts[['node_count']] = degrees_counts[['node_count']].astype(int)
 
     _['degree'] = _['degree'].astype(int)
