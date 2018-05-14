@@ -112,24 +112,21 @@ def fill_empty(mapping_df_find_counts, thresholds, noises, hyperparameters, degr
 
 
 def find_corrects_not_corrects(mapping_df_find_counts):
-    _ = mapping_df_find_counts.copy()
+    _ = mapping_df_find_counts.copy().set_index(['threshold_ratio', 'noise', 'hyperparameter', 'degree'])
     _ = _.loc[_['correctness'] == 'TRUE'].join(_.loc[_['correctness'] == 'FALSE'], rsuffix='_f', how='left')
-    _['correctness_f'] = _['correctness_f'].fillna(value='FALSE')
-    _['correctness'] = _['correctness'].fillna(value='TRUE')
-    _[['count', 'count_f']] = _[['count', 'count_f']].fillna(value=0).astype(int)
     _ = _.rename(index=str, columns={"count": "corrects", "count_f": "not_corrects"})
-    _ = _.drop(['correctness', 'correctness_f'], axis=1)
+    _ = _.drop(['correctness', 'correctness_f', 'main_graph_f'], axis=1)
 
-    return _
+    return _.reset_index()
 
 
-def find_node_counts(mappings_df_find_corrects_not_corrects, degrees_counts, size):
-    _ = mappings_df_find_corrects_not_corrects.copy().reset_index()
-    _[['degree']] = _[['degree']].astype(int)
+def find_node_counts(mappings_df_find_corrects_not_corrects , degrees_counts):
+    _ :pd.DataFrame= mappings_df_find_corrects_not_corrects.copy()
+    degrees_counts[['node_count']] = degrees_counts[['node_count']].astype(int)
+
+    _['degree'] = _['degree'].astype(int)
     _ = _.set_index(['degree'])
     _ = degrees_counts.join(_)
-    _[['node_count']] = _[['node_count']] * size
-    _[['node_count']] = _[['node_count']].astype(int)
     return _.reset_index()
 
 

@@ -41,7 +41,7 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.hyperparameters = [.1, .5, .8, .9, 1]
+        self.hyperparameters = [.1, .25, .5, .6, .7, .8, .9, 1]
         self.th_step = th_step
 
         self.sample_size = sample_size
@@ -146,7 +146,8 @@ class Simulation(object):
                     hyperparameter_bucket.append(noisy_graphs_same_noise)
 
                     if self.verbose:
-                        print("{:0.2f}% of creation completed...".format((_ * len(self.noises) * len(self.thresholds) + idx * len(self.noises) + jdx) / (self.main_graph_sample_size * len(self.thresholds) * len(self.noises)) * 100))
+                        print("{:0.2f}% of creation completed...".format((idx * len(self.noises) + jdx) / (
+                                    self.main_graph_sample_size * len(self.noises) * len(self.hyperparameters)) * 100))
 
                 noisy_graphs.append((hyperparameter, hyperparameter_bucket))
             self.noisy_graphs.append(noisy_graphs)
@@ -185,12 +186,9 @@ class Simulation(object):
             degree_count = self.degrees_count[main_graph_idx]
             degree_counts = find_degree_counts(degree_count)
 
-            mapping_df_find_counts = find_counts(graph_result)
-            mapping_df_fill_empty = fill_empty(mapping_df_find_counts, self.thresholds, self.noises, self.hyperparameters, list(degree_count.keys()))
-            mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(mapping_df_fill_empty)
-            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts, int((len(noisy_graph_bucket) * (len(noisy_graph_bucket) - 1)) / 2) )
+            mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(graph_result)
+            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts)
             mapping_df_find_node_counts['main_graph'] = main_graph_idx
-            mapping_df_find_node_counts = mapping_df_find_node_counts.drop(['index', 'index_f'], axis=1)
             result = pd.concat([result, mapping_df_find_node_counts])
 
         return result

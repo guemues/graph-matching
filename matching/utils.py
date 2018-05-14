@@ -33,25 +33,53 @@ def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyper
         match = match_using_threshold(distances, threshold_ratio)
         i_noisy, j_noisy = np.where(match == 1)
 
-        if len(i_noisy) == 0 and len(j_noisy) == 0:
-            continue
-
-        df = pd.concat([df, pd.DataFrame(
-            data={
-                "threshold_ratio": threshold_ratio,
-                "noise": noise,
-                "hyperparameter": hyperparameter,
-                "correctness": np.vectorize(lambda x: str(x).upper())(i_noisy == j_noisy),
-                "node_degree_1": np.vectorize(dict(degrees).get)(np.vectorize(mapping_1.get)(i_noisy)),
-                "node_degree_2": np.vectorize(dict(degrees).get)(np.vectorize(mapping_2.get)(j_noisy)),
-                "main_graph": main_graph
-            })
-        ])
-
         if len(i_noisy) > 10000:
             break
 
-    return df.reset_index()
+        if not (len(i_noisy) == 0) or not(len(j_noisy) == 0):
+
+            temp_df = pd.DataFrame(
+                data={
+                    "threshold_ratio": threshold_ratio,
+                    "noise": noise,
+                    "hyperparameter": hyperparameter,
+                    "correctness": np.vectorize(lambda x: str(x).upper())(i_noisy == j_noisy),
+                    "degree": np.vectorize(dict(degrees).get)(np.vectorize(mapping_1.get)(i_noisy)),
+                    "main_graph": main_graph
+                }).reset_index().groupby(
+                ['threshold_ratio', 'noise', 'hyperparameter', 'correctness', 'degree', 'main_graph'])[
+                'index'].count().reset_index().rename(columns={'index': 'count'})
+
+            search_df = temp_df.set_index(['degree', 'correctness'])
+            for degree in set(degrees.values()):
+                for correctness in ['TRUE', 'FALSE']:
+                    try:
+                        search_df.loc[degree, correctness]
+                    except KeyError:
+                        temp_df = temp_df.append({
+                            "threshold_ratio": threshold_ratio,
+                            "noise": noise,
+                            "hyperparameter": hyperparameter,
+                            "correctness": correctness,
+                            "degree": degree,
+                            "main_graph": main_graph,
+                            "count": 0
+                        }, ignore_index=True)
+        else:
+            temp_df = pd.DataFrame(
+                data={
+                    "threshold_ratio": threshold_ratio,
+                    "noise": noise,
+                    "hyperparameter": hyperparameter,
+                    "correctness": ['TRUE'] * len(set(degrees.values())) + ['FALSE'] * len(set(degrees.values())),
+                    "degree": list(set(degrees.values())) + list(set(degrees.values())),
+                    "main_graph": main_graph,
+                    "count": 0
+                })
+
+        df = pd.concat([df, temp_df])
+
+    return df.reset_index(drop=True)
 
     #
     # tp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 1

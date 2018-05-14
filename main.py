@@ -27,7 +27,6 @@ parser.add_argument('--d', dest='dimension_count', type=int, help='')
 parser.add_argument('--e', dest='edge_probability', type=float, help='')
 parser.add_argument('--n', dest='node_count', type=int, help='')
 
-parser.add_argument('--s', dest='sample_size', type=int, help='')
 
 parser.add_argument('--noise-step', dest='noise_step', type=float, help='')
 parser.add_argument('--mn', dest='maximum_noise', type=float, help='')
@@ -35,7 +34,6 @@ parser.add_argument('--mn', dest='maximum_noise', type=float, help='')
 parser.add_argument('--th-step', dest='th_step', type=float, help='')
 parser.add_argument('--mt', dest='max_threshold', type=float, help='')
 
-parser.add_argument('--ms', dest='main_sample', type=int, help='')
 parser.add_argument('--hp', dest='hyperparamater', type=float, help='')
 
 
@@ -54,8 +52,8 @@ if __name__ == '__main__':
             node_count=args.node_count,
             edge_probability=args.edge_probability,
             noise_step=args.noise_step,
-            main_graph_sample_size=args.main_sample,
-            sample_size=args.sample_size,
+            main_graph_sample_size=1,
+            sample_size=2,
             maximum_noise=args.maximum_noise,
             embedding_type=args.embedding_type,
             th_step=args.th_step,
