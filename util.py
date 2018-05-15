@@ -22,7 +22,7 @@ with open(info_file_str) as info_file:
 
 
 def create_hyperparameter_result(input_folder, output_file):
-    total: DataFrame = pd.DataFrame()
+    total = pd.DataFrame()
     for _ in [f for f in os.listdir('./results/') if isfile(join('./results/', f)) and '.csv' in f]:
         a = pd.read_csv(os.path.join('./results/', _))
         a['main_graph'] = str(_) + '_' + a['main_graph'].astype(str)
