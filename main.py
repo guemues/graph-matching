@@ -3,6 +3,8 @@
 """In this file i will create 100 * 10 noisy version of a main graph then compare the distances of the embedings."""
 import pickle
 
+from matching.matching import MatchingType
+
 __author__ = "Orcun Gumus"
 
 from matching.simulation import Simulation
@@ -15,7 +17,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 
-parser.add_argument('--run', dest='run', type=bool, help='')
+parser.add_argument('--run', dest='run', type=MatchingType, help='')
 parser.add_argument('--id', dest='id', type=str, help='')
 
 
@@ -59,7 +61,7 @@ if __name__ == '__main__':
             th_step=args.th_step,
             max_threshold=args.max_threshold,
             graph_type=args.random_graph_type,
-            hyperparameter=args.hyperparamater,
+            matching_type=args.run,
             test_id=test_id,
         )
     if args.run:

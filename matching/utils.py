@@ -5,6 +5,24 @@ import numpy as np
 import pandas as pd
 
 from matching import match_using_threshold, confusion_matrix
+from matching.matching import confusion_matrix_one_to_one, match_nearest
+
+
+def one_to_one_dataframe(distances, mapping_1, mapping_2,  noise, hyperparameter, degrees, main_graph):
+    matches = match_nearest(distances)
+    tp, fp, fn, tn = confusion_matrix_one_to_one(matches, mapping_1, mapping_2)
+    df = pd.DataFrame(
+        data={
+            "tp": [tp],
+            "fp": [fp],
+            "fn": [fn],
+            "tn": [tn],
+            "noise": [noise],
+            "hyperparameter": [hyperparameter],
+            "main_graph": [main_graph]
+        })
+    return df
+
 
 
 def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, degrees, main_graph):
@@ -103,56 +121,6 @@ def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyper
     #
     # df = pd.concat([df, _, _2])
 
-
-def correct_node_probability(distances, mapping_1, mapping_2):
-    df = pd.DataFrame()
-    for t in np.arange(0, 0.1, 0.002):
-        match = match_using_threshold(distances, t)
-        tps, fps = confusion_matrix(match, mapping_1, mapping_2)
-
-        _ = pd.DataFrame(
-                data={
-                    "node": tps,
-                    "correctness": pd.Series(["CORRECT"] * len(tps)),
-                    "threshold_ratio": pd.Series([t] * len(tps))
-                }
-            )
-        _2 = pd.DataFrame(
-            data={
-                "node": fps,
-                "correctness": pd.Series(["FALSE"] * len(fps)),
-                "threshold_ratio": pd.Series([t] * len(fps))
-                }
-            )
-
-        df = pd.concat([df, _, _2])
-
-    return df
-
-
-def tp_fp_fn_tn_pd_row(distances, mapping_1, mapping_2):
-
-    tps, fps, fns, tns, ts = [], [], [], [], []
-    for t in np.arange(0, 0.5, 0.002):
-        match = match_using_threshold(distances, t)
-        tp, fp, fn, tn = confusion_matrix(match, mapping_1, mapping_2)
-        tps.append(tp)
-        fps.append(fp)
-        fns.append(fn)
-        tns.append(tn)
-        ts.append(t)
-
-    df = pd.DataFrame(
-        data={
-            "true_positive": tps,
-            "false_positive": fps,
-            "false_negative": fns,
-            "true_negative": tns,
-            "threshold_ratio": ts,
-        }
-    )
-
-    return df
 
 
 def distribution_pd_row(distances, mapping_1, mapping_2, edge_removal_possibility):

@@ -17,8 +17,31 @@ class ComparisonType(Enum):
 
 
 class MatchingType(Enum):
-    Nearest = "2"
-    Circle = "1"
+    Nearest = "nearest"
+    Circle = "circle"
+
+
+def match_nearest(distances):
+
+    assert distances.shape[0] == distances.shape[1]
+
+    matches = {}
+
+    matched_g1 = [False] * distances.shape[0]
+    matched_g2 = [False] * distances.shape[0]
+
+    sorted_indexes = np.dstack(np.unravel_index(np.argsort(distances.ravel()), (distances.shape[0], distances.shape[0]))).reshape(distances.shape[0] * distances.shape[0],2)
+    for n1, n2 in sorted_indexes:
+        if not matched_g1[n1] and not matched_g2[n2]:
+            matches[n1] = n2
+
+            matched_g1[n1] = True
+            matched_g2[n2] = True
+
+    assert all(matched_g1)
+    assert all(matched_g2)
+
+    return matches
 
 
 def compare_difference_graph(graph_1, graph_2):
@@ -83,25 +106,20 @@ def match_using_threshold(distances, ratio):
     neighbors[distances < ratio * np.max(distances)] = 1
     return neighbors
 
-
-def correctly_estimated_nodes(matches, mapping_1, mapping_2):
+def confusion_matrix_one_to_one(matches, mapping_1, mapping_2):
     """
-    # TODO: ***
+
     :param mapping_2:
     :param mapping_1:
     :param matches:
     :return: tp, fp, fn, tn
     """
+    tp = sum([1 for n1, n2 in matches.items() if n1 == n2])
+    fp = sum([1 for n1, n2 in matches.items() if n1 != n2])
+    fn = 0
+    tn = len(matches) - fn - tp
 
-    tp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 1
-    fp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 0
-    fn_mask = matches[ones]
-
-    tp = np.array(list(mapping_1.values()))[tp_mask].tolist()
-    fp = np.array(list(mapping_1.values()))[fp_mask].tolist()
-
-    return tp, tn
-
+    return tp, fp, fn, tn
 
 def confusion_matrix(matches, mapping_1, mapping_2):
     """
@@ -126,3 +144,12 @@ def map_embeddings_probabilities(emb_1, emb_2, use_softmax=False):
     d_m = distance_matrix(emb_1, emb_2)
     p = d_m / np.sum(d_m, axis=1) if not use_softmax else np.apply_along_axis(softmax, 1, d_m)
     return p
+
+
+if __name__ == '__main__':
+    distances = np.array(
+        [[5, 2, 4],
+        [3, 3, 3],
+        [6, 1, 2]]
+    )
+    print(match_nearest(distances))

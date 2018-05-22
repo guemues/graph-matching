@@ -2,9 +2,10 @@
 from networkx import degree_centrality, nx
 from scipy.spatial import distance_matrix
 from matching import create_main_graph, NoisyGraph, MainGraph
+from matching.matching import MatchingType
 from matching.statistics import find_degree_counts, find_counts, fill_empty, find_corrects_not_corrects, \
     find_node_counts
-from .utils import mapping_dataframe
+from .utils import mapping_dataframe, one_to_one_dataframe
 
 import json
 import os
@@ -30,11 +31,10 @@ class Simulation(object):
             maximum_noise,
             embedding_type,
             graph_type,
-
             th_step,
             max_threshold,
-            hyperparameter,
             test_id,
+            matching_type,
             verbose=True
     ):
         self.dimension_count = dimension_count
@@ -50,6 +50,7 @@ class Simulation(object):
         self.noises = list(np.arange(0, self.maximum_noise, self.noise_step))
         self.thresholds = np.arange(self.th_step, max_threshold, self.th_step)
 
+        self.matching_type = matching_type
         self.embedding_type = embedding_type
         self.graph_type = graph_type
         self.main_graph_sample_size = main_graph_sample_size
@@ -151,6 +152,8 @@ class Simulation(object):
 
                 noisy_graphs.append((hyperparameter, hyperparameter_bucket))
             self.noisy_graphs.append(noisy_graphs)
+
+
     def _run(self, compare_function):
 
         self.main_graphs.clear()
@@ -176,25 +179,35 @@ class Simulation(object):
                             if idx_2 <= idx_1:
                                 continue
                             distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                            small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, hyperparameter, self.degrees[main_graph_idx], main_graph_idx)
+                            small_result = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, hyperparameter, self.degrees[main_graph_idx], main_graph_idx)
                             # Stats
                             graph_result = pd.concat([graph_result, small_result])
 
                             if self.verbose:
                                 print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)))
 
-            degree_count = self.degrees_count[main_graph_idx]
-            degree_counts = find_degree_counts(degree_count)
 
-            mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(graph_result)
-            mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts)
+            if self.matching_type == MatchingType.Circle:
+                degree_count = self.degrees_count[main_graph_idx]
+                degree_counts = find_degree_counts(degree_count)
+                mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(graph_result)
+                mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts)
+            else:
+                mapping_df_find_node_counts = graph_result
             mapping_df_find_node_counts['main_graph'] = main_graph_idx
             result = pd.concat([result, mapping_df_find_node_counts])
 
         return result
 
     def run_nodes_mapping(self):
-        self.nodes_mapping  = self._run(mapping_dataframe)
+        if self.matching_type == MatchingType.Circle:
+            func = mapping_dataframe
+
+        elif self.matching_type == MatchingType.Nearest:
+            func = one_to_one_dataframe
+
+        self.nodes_mapping = self._run(func)
+
 
 #
 # def run_accuracy_tests(self):
