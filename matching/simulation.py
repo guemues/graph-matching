@@ -41,7 +41,7 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.hyperparameters = [0.0001, 0.0002, 0.0003, 0.0004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, .1, .2, .3, .4]
+        self.hyperparameters = list(np.logspace(-2, 2, 100, endpoint=True, base=10) / 100)
         self.th_step = th_step
 
         self.sample_size = sample_size
