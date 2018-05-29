@@ -1,5 +1,5 @@
 """This module implemented for visualizations."""
-
+from collections import Counter, defaultdict
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ def one_to_one_dataframe(distances, thresholds, mapping_1, mapping_2,  noise, hy
 
 
 
-def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, degrees, main_graph):
+def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, idx2degree, test_id):
     """
 
     :param distances: For every node i and j in main graph G distance matrix
@@ -46,59 +46,30 @@ def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyper
     every node j which are close enough (distance < threshold_ratio * max(distance))
     in the embeddings of G'(i') and G''(j')
     """
+    results = []
 
-    df = pd.DataFrame()
+    degree2count = defaultdict(int)
+    for node_id, degree in idx2degree.items():
+        degree2count[degree] += 1
+
     for threshold_ratio in thresholds:
         match = match_using_threshold(distances, threshold_ratio)
         i_noisy, j_noisy = np.where(match == 1)
 
-        if len(i_noisy) > 10000:
-            break
+        trues_degrees = []; false_degrees = []
+        for idx, i in enumerate(i_noisy):
+            if mapping_1[i_noisy[idx]] == mapping_2[j_noisy[idx]]:
+                trues_degrees.append(idx2degree[mapping_1[i_noisy[idx]]])
+            else:
+                false_degrees.append(idx2degree[mapping_2[j_noisy[idx]]])
 
-        if not (len(i_noisy) == 0) or not(len(j_noisy) == 0):
+        true_counter = Counter(trues_degrees)
+        false_counter = Counter(false_degrees)
 
-            temp_df = pd.DataFrame(
-                data={
-                    "threshold_ratio": threshold_ratio,
-                    "noise": noise,
-                    "hyperparameter": hyperparameter,
-                    "correctness": np.vectorize(lambda x: str(x).upper())(i_noisy == j_noisy),
-                    "degree": np.vectorize(dict(degrees).get)(np.vectorize(mapping_1.get)(i_noisy)),
-                    "main_graph": main_graph
-                }).reset_index().groupby(
-                ['threshold_ratio', 'noise', 'hyperparameter', 'correctness', 'degree', 'main_graph'])[
-                'index'].count().reset_index().rename(columns={'index': 'count'})
+        results += [(test_id, hyperparameter, noise, threshold_ratio, degree, degree2count[degree], true_counter[degree], false_counter[degree]) for degree in degree2count.keys()]
 
-            search_df = temp_df.set_index(['degree', 'correctness'])
-            for degree in set(degrees.values()):
-                for correctness in ['TRUE', 'FALSE']:
-                    try:
-                        search_df.loc[degree, correctness]
-                    except KeyError:
-                        temp_df = temp_df.append({
-                            "threshold_ratio": threshold_ratio,
-                            "noise": noise,
-                            "hyperparameter": hyperparameter,
-                            "correctness": correctness,
-                            "degree": degree,
-                            "main_graph": main_graph,
-                            "count": 0
-                        }, ignore_index=True)
-        else:
-            temp_df = pd.DataFrame(
-                data={
-                    "threshold_ratio": threshold_ratio,
-                    "noise": noise,
-                    "hyperparameter": hyperparameter,
-                    "correctness": ['TRUE'] * len(set(degrees.values())) + ['FALSE'] * len(set(degrees.values())),
-                    "degree": list(set(degrees.values())) + list(set(degrees.values())),
-                    "main_graph": main_graph,
-                    "count": 0
-                })
 
-        df = pd.concat([df, temp_df])
-
-    return df.reset_index(drop=True)
+    return sorted(results, reverse=True, key=lambda tup: (tup[1],tup[2],tup[3],tup[4]) )
 
     #
     # tp_mask = matches[list(mapping_1.values()), list(mapping_2.values())] == 1

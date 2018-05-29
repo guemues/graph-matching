@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import csv
+
 from networkx import degree_centrality, nx
 from scipy.spatial import distance_matrix
 from matching import create_main_graph, NoisyGraph, MainGraph
@@ -26,7 +28,6 @@ class Simulation(object):
             node_count,
             edge_probability,
             noise_step,
-            main_graph_sample_size,
             sample_size,
             maximum_noise,
             embedding_type,
@@ -41,19 +42,18 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.hyperparameters = [0.08, 1, 3.5]
+        self.weights = [0.08, 1, 3.5]
         self.th_step = th_step
 
-        self.sample_size = sample_size
+        self.sample_size = 2
         self.maximum_noise = maximum_noise
 
         self.noises = [0.03]
-        self.thresholds = np.arange(self.th_step, max_threshold, self.th_step)
+        self.thresholds = np.arange(0.01, 0.15, 0.01).tolist()
 
         self.matching_type = matching_type
         self.embedding_type = embedding_type
         self.graph_type = graph_type
-        self.main_graph_sample_size = main_graph_sample_size
 
         self.main_graphs = []
         self.noisy_graphs = []
@@ -61,7 +61,7 @@ class Simulation(object):
         self.degrees = []
         self.degrees_count = []
 
-        self.nodes_mapping = pd.DataFrame()
+        self.nodes_mapping = []
         self.max_threshold = max_threshold
         self.test_id = test_id
 
@@ -91,14 +91,22 @@ class Simulation(object):
             'maximum_noise': self.maximum_noise,
             'embedding_type': self.embedding_type.name,
             'graph_type': self.graph_type.name,
-            'hyperparameter': self.hyperparameters
+            'hyperparameter': self.weights
         }
         with open(RESULTS_JSON_FILENAME_FULL, 'w+') as fp:
             json.dump(results, fp)
 
         filename = os.path.join(RESULTS_FOLDER, str(self.test_id) + '.csv')
 
-        self.nodes_mapping.to_csv(filename)
+        def formatdata(data):
+            for row in data:
+                yield ["%0.2f" % v if isinstance(v, float) else str(v) for v in row ]
+
+        with open(filename, 'w') as out:
+            csv_out = csv.writer(out, delimiter=',')
+            csv_out.writerow(['id', 'weight', 'noise', 'threshold', 'degree', 'node_count', 'tp', 'fp'])
+            csv_out.writerows(formatdata(self.nodes_mapping))
+
         #
         # with open(RESULTS_JSON_FILENAME_FULL, 'w') as results_file:
         #     json.dump(results, results_file, indent=2)
@@ -113,91 +121,69 @@ class Simulation(object):
             print("No need for create graphs; they are already created.")
             return
 
-        for _ in range(self.main_graph_sample_size):
-            main_nx_graph = create_main_graph(
-                graph_type=self.graph_type,
-                node_count=self.node_count,
-                edge_probability=self.edge_probability
-            )
-            main_graph = MainGraph(
-                nx_graph=main_nx_graph,
-                edge_probability=self.edge_probability,
-                node_count=self.node_count,
-            )
-            self.main_graphs.append(main_graph)
+        main_nx_graph = create_main_graph(
+            graph_type=self.graph_type,
+            node_count=self.node_count,
+            edge_probability=self.edge_probability
+        )
+        main_graph = MainGraph(
+            nx_graph=main_nx_graph,
+            edge_probability=self.edge_probability,
+            node_count=self.node_count,
+        )
+        self.main_graphs.append(main_graph)
 
-            self.degrees.append(dict(main_nx_graph.degree))
-            self.degrees_count.append(dict(collections.Counter(sorted([d for n, d in main_nx_graph.degree()], reverse=True))))
-            # for main_nx_graph.degree
-            # self.degree_c = degree_centrality(main_nx_graph)
-            noisy_graphs = []
-            for idx, hyperparameter in enumerate(self.hyperparameters):
-                hyperparameter_bucket = []
-                for jdx, edge_removal_probability in enumerate(self.noises):
-                    noisy_graphs_same_noise = [
-                        NoisyGraph(
-                            main_graph=main_graph,
-                            edge_probability=self.edge_probability,
-                            node_count=self.node_count,
-                            edge_removal_probability=edge_removal_probability,
-                            embedding_algorithm_enum=self.embedding_type,
-                            dimension_count=self.dimension_count,
-                            hyperparameter=hyperparameter
-                        ) for _ in range(self.sample_size)]
-                    hyperparameter_bucket.append(noisy_graphs_same_noise)
+        self.idx2degree = dict(main_nx_graph.degree)
 
-                    if self.verbose:
-                        print("{:0.2f}% of creation completed...".format((idx * len(self.noises) + jdx) / (
-                                    self.main_graph_sample_size * len(self.noises) * len(self.hyperparameters)) * 100))
+        for idx, weight in enumerate(self.weights):
+            weight_bin = []
+            for jdx, edge_removal_probability in enumerate(self.noises):
+                noisy_graphs_same_noise = [
+                    NoisyGraph(
+                        main_graph=main_graph,
+                        edge_probability=self.edge_probability,
+                        node_count=self.node_count,
+                        edge_removal_probability=edge_removal_probability,
+                        embedding_algorithm_enum=self.embedding_type,
+                        dimension_count=self.dimension_count,
+                        hyperparameter=weight
+                    ) for _ in range(self.sample_size)]
+                weight_bin.append(noisy_graphs_same_noise)
 
-                noisy_graphs.append((hyperparameter, hyperparameter_bucket))
-            self.noisy_graphs.append(noisy_graphs)
+                if self.verbose:
+                    print("{:0.2f}% of creation completed...".format((idx * len(self.noises) + jdx) / (len(self.noises) * len(self.weights)) * 100))
 
+            self.noisy_graphs.append((weight, weight_bin))
 
     def _run(self, compare_function):
 
         self.main_graphs.clear()
 
-        total_calculation = self.main_graph_sample_size * len(self.noises) * self.sample_size * self.sample_size * 5
+        total_calculation = len(self.noises) * (self.sample_size * (self.sample_size - 1))
         current_calculation = 0
-        result = pd.DataFrame()
 
-        for main_graph_idx, noisy_graph_samples in enumerate(self.noisy_graphs):
-            graph_result = pd.DataFrame()
+        graph_result = []
 
-            for hyperparameter, hyperparameter_graph_bucket in noisy_graph_samples:
-                for  noisy_graph_bucket  in hyperparameter_graph_bucket:
+        for weight, weight_graph_bucket in self.noisy_graphs:
+            for  noisy_graph_bucket  in weight_graph_bucket:
+                for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
+                    for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
 
-                    for idx_1, noisy_graph in enumerate(noisy_graph_bucket):
-                        for idx_2, compare_noisy_graph in enumerate(noisy_graph_bucket):
+                        current_calculation += 1
 
-                            current_calculation += 1
+                        assert isinstance(noisy_graph, NoisyGraph)
+                        assert isinstance(compare_noisy_graph, NoisyGraph)
 
-                            assert isinstance(noisy_graph, NoisyGraph)
-                            assert isinstance(compare_noisy_graph, NoisyGraph)
+                        if idx_2 <= idx_1:
+                            continue
+                        distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
+                        small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, weight, self.idx2degree, self.test_id)
 
-                            if idx_2 <= idx_1:
-                                continue
-                            distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                            small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, hyperparameter, self.degrees[main_graph_idx], main_graph_idx)
-                            # Stats
-                            graph_result = pd.concat([graph_result, small_result])
+                        graph_result = graph_result + small_result
 
-                            if self.verbose:
-                                print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)))
-
-
-            if self.matching_type == MatchingType.Circle:
-                degree_count = self.degrees_count[main_graph_idx]
-                degree_counts = find_degree_counts(degree_count)
-                mapping_df_find_corrects_not_corrects = find_corrects_not_corrects(graph_result)
-                mapping_df_find_node_counts = find_node_counts(mapping_df_find_corrects_not_corrects, degree_counts)
-            else:
-                mapping_df_find_node_counts = graph_result
-            mapping_df_find_node_counts['main_graph'] = main_graph_idx
-            result = pd.concat([result, mapping_df_find_node_counts])
-
-        return result
+                        if self.verbose:
+                            print('{:0.2f}% of run completed...'.format(int(current_calculation / total_calculation * 100)))
+        return graph_result
 
     def run_nodes_mapping(self):
         if self.matching_type == MatchingType.Circle:
