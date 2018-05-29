@@ -41,13 +41,13 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.hyperparameters = list(np.logspace(0, 1, 10, endpoint=True, base=10))
+        self.hyperparameters = [0.08, 1, 3.5]
         self.th_step = th_step
 
         self.sample_size = sample_size
         self.maximum_noise = maximum_noise
 
-        self.noises = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
+        self.noises = [0.03]
         self.thresholds = np.arange(self.th_step, max_threshold, self.th_step)
 
         self.matching_type = matching_type
