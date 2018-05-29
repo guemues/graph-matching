@@ -8,7 +8,7 @@ from matching import match_using_threshold, confusion_matrix
 from matching.matching import confusion_matrix_one_to_one, match_nearest
 
 
-def one_to_one_dataframe(distances, mapping_1, mapping_2,  noise, hyperparameter, degrees, main_graph):
+def one_to_one_dataframe(distances, thresholds, mapping_1, mapping_2,  noise, hyperparameter, degrees, main_graph):
     matches = match_nearest(distances)
     tp, fp, fn, tn = confusion_matrix_one_to_one(matches, mapping_1, mapping_2)
 

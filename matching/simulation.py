@@ -179,7 +179,7 @@ class Simulation(object):
                             if idx_2 <= idx_1:
                                 continue
                             distances = distance_matrix(noisy_graph.embeddings, compare_noisy_graph.embeddings, p=2)
-                            small_result = compare_function(distances, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, hyperparameter, self.degrees[main_graph_idx], main_graph_idx)
+                            small_result = compare_function(distances, self.thresholds, noisy_graph.mapping, compare_noisy_graph.mapping,compare_noisy_graph.noise, hyperparameter, self.degrees[main_graph_idx], main_graph_idx)
                             # Stats
                             graph_result = pd.concat([graph_result, small_result])
 
