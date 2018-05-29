@@ -49,7 +49,7 @@ class Simulation(object):
         self.maximum_noise = maximum_noise
 
         self.noises = [0.03]
-        self.thresholds = np.arange(0.01, 0.15, 0.01).tolist()
+        self.thresholds = np.arange(0.001, 0.15, 0.001).tolist()
 
         self.matching_type = matching_type
         self.embedding_type = embedding_type
