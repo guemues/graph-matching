@@ -100,7 +100,7 @@ class Simulation(object):
 
         def formatdata(data):
             for row in data:
-                yield ["%0.2f" % v if isinstance(v, float) else str(v) for v in row ]
+                yield ["%0.3f" % v if isinstance(v, float) else str(v) for v in row ]
 
         with open(filename, 'w') as out:
             csv_out = csv.writer(out, delimiter=',')
