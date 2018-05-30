@@ -7,7 +7,7 @@ from matching import create_main_graph, NoisyGraph, MainGraph
 from matching.matching import MatchingType
 from matching.statistics import find_degree_counts, find_counts, fill_empty, find_corrects_not_corrects, \
     find_node_counts
-from .utils import mapping_dataframe, one_to_one_dataframe
+from .utils import one_to_one_matching, one_to_many_matching
 
 import json
 import os
@@ -42,13 +42,13 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.weights = [0.08, 1, 3.5]
+        self.weights = list(reversed(np.logspace(0, -1, 10, endpoint=True).tolist()))[:-1] + np.logspace(0, 1, 2, endpoint=True).tolist()
         self.th_step = th_step
 
         self.sample_size = 2
         self.maximum_noise = maximum_noise
 
-        self.noises = [0.03]
+        self.noises = np.arange(0.01, 0.11, 0.01).tolist()
         self.thresholds = np.arange(0.001, 0.15, 0.001).tolist()
 
         self.matching_type = matching_type
@@ -104,7 +104,12 @@ class Simulation(object):
 
         with open(filename, 'w') as out:
             csv_out = csv.writer(out, delimiter=',')
-            csv_out.writerow(['id', 'weight', 'noise', 'threshold', 'degree', 'node_count', 'tp', 'fp'])
+            if self.matching_type is MatchingType.Circle:
+                csv_out.writerow(['id', 'weight', 'noise', 'threshold', 'degree', 'node_count', 'tp', 'fp'])
+
+            elif self.matching_type is MatchingType.Nearest:
+                csv_out.writerow(['id', 'weight', 'noise', 'tp', 'fp'])
+
             csv_out.writerows(formatdata(self.nodes_mapping))
 
         #
@@ -186,11 +191,11 @@ class Simulation(object):
         return graph_result
 
     def run_nodes_mapping(self):
-        if self.matching_type == MatchingType.Circle:
-            func = mapping_dataframe
+        if self.matching_type is MatchingType.Circle:
+            func = one_to_many_matching
 
-        elif self.matching_type == MatchingType.Nearest:
-            func = one_to_one_dataframe
+        elif self.matching_type is MatchingType.Nearest:
+            func = one_to_one_matching
 
         self.nodes_mapping = self._run(func)
 

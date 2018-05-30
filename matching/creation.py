@@ -156,14 +156,21 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, hyperparame
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
+        bin_length = int(dimension_count / 2)
+
         A = np.array( [
-            np.concatenate([np.array([
-                (hyperparameter) * graph.degree(i) / (higher * dimension_count)]) ,
-                (hyperparameter * hyperparameter) * np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0] ,
-                (hyperparameter * hyperparameter * hyperparameter) * np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=int(dimension_count / 2), density=True, range=(lower, higher))[0]], axis=0)
+            np.concatenate([np.array(
+                [graph.degree(i) / (higher)]) ,
+                np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=bin_length, density=True, range=(lower, higher))[0] ,
+                np.histogram([graph.degree(neigneig) for neig in graph.neighbors(i) for neigneig in graph.neighbors(neig)], bins=bin_length, density=True, range=(lower, higher))[0]], axis=0)
             for i in graph.nodes()]
         )
 
+        A = (A - A.mean(axis=0)) / A.std(axis=0)
+        A[:, 0] = A[:,0]
+        A[:, 1:1+bin_length] = A[:, 1:1+bin_length]
+        A[:, 2+bin_length:] = A[:, 2+bin_length:] * hyperparameter
+        A = np.nan_to_num(A)
         return A
     else:
         raise NotImplementedError

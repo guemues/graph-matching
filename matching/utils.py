@@ -8,25 +8,15 @@ from matching import match_using_threshold, confusion_matrix
 from matching.matching import confusion_matrix_one_to_one, match_nearest
 
 
-def one_to_one_dataframe(distances, thresholds, mapping_1, mapping_2,  noise, hyperparameter, degrees, main_graph):
+def one_to_one_matching(distances, thresholds, mapping_1, mapping_2,  noise, hyperparameter, degrees, test_id):
     matches = match_nearest(distances)
     tp, fp, fn, tn = confusion_matrix_one_to_one(matches, mapping_1, mapping_2)
 
-    df = pd.DataFrame(
-        data={
-            "tp": [tp],
-            "fp": [fp],
-            "fn": [fn],
-            "tn": [tn],
-            "noise": [noise],
-            "hyperparameter": [hyperparameter],
-            "main_graph": [main_graph]
-        })
-    return df
+    return [(test_id, hyperparameter, noise, tp, fp)]
 
 
 
-def mapping_dataframe(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, idx2degree, test_id):
+def one_to_many_matching(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, idx2degree, test_id):
     """
 
     :param distances: For every node i and j in main graph G distance matrix
