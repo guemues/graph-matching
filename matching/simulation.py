@@ -42,7 +42,7 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.weights = list(reversed(np.logspace(0, -1, 10, endpoint=True).tolist()))[:-1] + np.logspace(0, 1, 2, endpoint=True).tolist()
+        self.weights = list(reversed(np.logspace(0, -1, 30, endpoint=True).tolist()))[:-1] + np.logspace(0, 0.5, 5, endpoint=True).tolist()
         self.th_step = th_step
 
         self.sample_size = 2
@@ -164,7 +164,7 @@ class Simulation(object):
 
         self.main_graphs.clear()
 
-        total_calculation = len(self.noises) * (self.sample_size * (self.sample_size - 1))
+        total_calculation = len(self.noises) * len(self.weights) * (self.sample_size * (self.sample_size - 1))
         current_calculation = 0
 
         graph_result = []
