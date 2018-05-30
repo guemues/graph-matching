@@ -42,13 +42,14 @@ class Simulation(object):
         self.node_count = node_count
         self.edge_probability = edge_probability
         self.noise_step = noise_step
-        self.weights = list(reversed(np.logspace(0, -1, 30, endpoint=True).tolist()))[:-1] + np.logspace(0, 0.5, 5, endpoint=True).tolist()
+        self.weights = list((np.logspace(0, -1, 30, endpoint=True).tolist())[:5])
+        #self.weights = list(reversed(np.logspace(0, -1, 30, endpoint=True).tolist()))[:-1] + np.logspace(0, 0.5, 5, endpoint=True).tolist()
         self.th_step = th_step
 
         self.sample_size = 2
         self.maximum_noise = maximum_noise
 
-        self.noises = np.arange(0.01, 0.11, 0.01).tolist()
+        self.noises = [0.01,0.02,0.03,0.04,0.05]
         self.thresholds = np.arange(0.001, 0.15, 0.001).tolist()
 
         self.matching_type = matching_type
