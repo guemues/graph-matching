@@ -4,11 +4,11 @@ import csv
 from networkx import degree_centrality, nx
 from scipy.spatial import distance_matrix
 from matching import create_main_graph, NoisyGraph, MainGraph
-from matching.matching import MatchingType
+from matching.matching import MatchingType, distance_accuracy
 from matching.statistics import find_degree_counts, find_counts, fill_empty, find_corrects_not_corrects, \
     find_node_counts
-from .utils import one_to_one_matching, one_to_many_matching
-
+from matching.matching import one_to_one_matching, one_to_many_matching
+from matching.creation import RandomGraphType
 import json
 import os
 import numpy as np
@@ -18,6 +18,80 @@ import collections
 RESULTS_FOLDER = './results'
 RESULTS_JSON_FILENAME = 'info.json'
 RESULTS_JSON_FILENAME_FULL = os.path.join(RESULTS_FOLDER, RESULTS_JSON_FILENAME)
+
+
+class OriginalSimulation(object):
+
+    def __init__(
+            self,
+            dimension_count,
+            node_count,
+            edge_probability,
+            noise_step,
+            embedding_type,
+            maximum_noise,
+            graph_type,
+            test_id,
+            verbose=True
+    ):
+        self.dimension_count = dimension_count
+        self.node_count = node_count
+        self.edge_probability = edge_probability
+        self.noise_step = noise_step
+        self.graph_type = RandomGraphType.Powerlaw
+        self.embedding_type = embedding_type
+        self.noises = np.arange(0.001, 0.051, 0.001).tolist()
+        self.avg_success = []
+        self.noisy_graphs = []
+        self.main_graph = None
+        self.test_id = test_id
+
+        self._create_graphs()
+
+    def _create_graphs(self):
+
+        main_nx_graph = create_main_graph(
+            graph_type=self.graph_type,
+            node_count=self.node_count,
+            edge_probability=self.edge_probability
+        )
+        self.main_graph = MainGraph(
+            nx_graph=main_nx_graph,
+            edge_probability=self.edge_probability,
+            node_count=self.node_count,
+            embedding_algorithm_enum=self.embedding_type,
+            dimension_count=self.dimension_count,
+            hyperparameter=1
+        )
+
+        for jdx, edge_removal_probability in enumerate(self.noises):
+            self.noisy_graphs.append(NoisyGraph(
+                main_graph=self.main_graph,
+                edge_probability=self.edge_probability,
+                node_count=self.node_count,
+                edge_removal_probability=edge_removal_probability,
+                embedding_algorithm_enum=self.embedding_type,
+                dimension_count=self.dimension_count,
+                hyperparameter=1
+            ))
+
+    def _run(self):
+
+        for noisy_graph in self.noisy_graphs:
+            distances = distance_matrix(noisy_graph.embeddings, self.main_graph.embeddings, p=2)
+            accuracy = distance_accuracy(distances)
+            self.avg_success.append((self.embedding_type.value, noisy_graph.noise, accuracy))
+
+    def save(self):
+        def formatdata(data):
+            for row in data:
+                yield ["%0.3f" % v if isinstance(v, float) else str(v) for v in row]
+        filename = os.path.join(RESULTS_FOLDER, str(self.test_id) + '.csv')
+
+        with open(filename, 'w') as out:
+            csv_out = csv.writer(out, delimiter=',')
+            csv_out.writerow(['embedding_type', 'noise', 'success'])
+            csv_out.writerows(formatdata(self.avg_success))
 
 
 class Simulation(object):
@@ -136,6 +210,9 @@ class Simulation(object):
             nx_graph=main_nx_graph,
             edge_probability=self.edge_probability,
             node_count=self.node_count,
+            embedding_algorithm_enum=self.embedding_type,
+            dimension_count=self.dimension_count,
+            hyperparameter=1
         )
         self.main_graphs.append(main_graph)
 
@@ -161,7 +238,8 @@ class Simulation(object):
 
             self.noisy_graphs.append((weight, weight_bin))
 
-    def _run(self, compare_function):
+
+    def _run_compare(self, compare_function):
 
         self.main_graphs.clear()
 
@@ -198,7 +276,7 @@ class Simulation(object):
         elif self.matching_type is MatchingType.Nearest:
             func = one_to_one_matching
 
-        self.nodes_mapping = self._run(func)
+        self.nodes_mapping = self._run_compare(func)
 
 
 #

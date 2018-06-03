@@ -85,7 +85,10 @@ class MainGraph(Graph):
             self,
             nx_graph,
             edge_probability,
-            node_count
+            node_count,
+            embedding_algorithm_enum,
+            dimension_count,
+            hyperparameter=1
     ):
 
         super().__init__()
@@ -95,6 +98,12 @@ class MainGraph(Graph):
         self.max_degree = max(dict(nx_graph.degree).values())
         self.min_degree = min(dict(nx_graph.degree).values())
         self.degree_dist = list(dict(nx_graph.degree).values())
+
+        self.e = get_embeddings(self.graph, embedding_algorithm_enum, dimension_count, hyperparameter, self.min_degree, self.max_degree)
+
+    @property
+    def embeddings(self):
+        return self.e
 
 
 class NoisyGraph(Graph):

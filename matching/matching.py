@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """This module implemented for embedding matching."""
-
-
+from collections import defaultdict, Counter
 from enum import Enum
 from scipy.spatial.distance import euclidean
 from scipy.spatial import distance_matrix
@@ -19,6 +18,12 @@ class ComparisonType(Enum):
 class MatchingType(Enum):
     Nearest = "nearest"
     Circle = "circle"
+
+
+def distance_accuracy(distances):
+    all_distance_mean = np.mean(distances)
+    correct_distance_mean = np.mean(np.diag(distances))
+    return max(0, 1 -correct_distance_mean / all_distance_mean)
 
 
 def match_nearest(distances):
@@ -42,6 +47,59 @@ def match_nearest(distances):
     assert all(matched_g2)
 
     return matches
+
+
+def one_to_one_matching(distances, thresholds, mapping_1, mapping_2,  noise, hyperparameter, degrees, test_id):
+    matches = match_nearest(distances)
+    tp, fp, fn, tn = confusion_matrix_one_to_one(matches, mapping_1, mapping_2)
+
+    return [(test_id, hyperparameter, noise, tp, fp)]
+
+
+def one_to_many_matching(distances, thresholds,  mapping_1, mapping_2, noise, hyperparameter, idx2degree, test_id):
+    """
+
+    :param distances: For every node i and j in main graph G distance matrix
+    contains (i, j) entries which gives the distance of the embedding of G' for i and
+    j from G''. G' and G'' are the noisy versions of the graph G.
+
+    :param mapping_1: For every node i in the main graph G and associated node i'
+    which is in the noisy graph G', mapping_1 contains i': i
+
+    :param mapping_2: For every node j in the main graph G and associated node i'
+    which is in the noisy graph G'', mapping_2 contains j': j
+
+    :param threshold_ratio: TO determine mathes in between two noisy graphs G' and G''
+    threshold value determined via max(distance) * threshold_ratio)
+
+    :return: For every node i in graph G it returns a pandas dataframe row with
+    every node j which are close enough (distance < threshold_ratio * max(distance))
+    in the embeddings of G'(i') and G''(j')
+    """
+    results = []
+
+    degree2count = defaultdict(int)
+    for node_id, degree in idx2degree.items():
+        degree2count[degree] += 1
+
+    for threshold_ratio in thresholds:
+        match = match_using_threshold(distances, threshold_ratio)
+        i_noisy, j_noisy = np.where(match == 1)
+
+        trues_degrees = []; false_degrees = []
+        for idx, i in enumerate(i_noisy):
+            if mapping_1[i_noisy[idx]] == mapping_2[j_noisy[idx]]:
+                trues_degrees.append(idx2degree[mapping_1[i_noisy[idx]]])
+            else:
+                false_degrees.append(idx2degree[mapping_2[j_noisy[idx]]])
+
+        true_counter = Counter(trues_degrees)
+        false_counter = Counter(false_degrees)
+
+        results += [(test_id, hyperparameter, noise, threshold_ratio, degree, degree2count[degree], true_counter[degree], false_counter[degree]) for degree in degree2count.keys()]
+
+
+    return sorted(results, reverse=True, key=lambda tup: (tup[1],tup[2],tup[3],tup[4]) )
 
 
 def compare_difference_graph(graph_1, graph_2):

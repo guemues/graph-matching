@@ -7,7 +7,7 @@ from matching.matching import MatchingType
 
 __author__ = "Orcun Gumus"
 
-from matching.simulation import Simulation
+from matching.simulation import Simulation, OriginalSimulation
 from matching.creation import RandomGraphType
 from matching import EmbeddingType, ComparisonType
 
@@ -49,22 +49,18 @@ if __name__ == '__main__':
         with open('./results/{}'.format(args.id), 'rb') as f:
             simulation = pickle.load(f)
     else:
-        simulation = Simulation(
+        simulation = OriginalSimulation(
             dimension_count=args.dimension_count,
             node_count=args.node_count,
             edge_probability=args.edge_probability,
             noise_step=0,
-            sample_size=2,
             maximum_noise=0,
             embedding_type=args.embedding_type,
-            th_step=0,
-            max_threshold=0,
             graph_type=args.random_graph_type,
-            matching_type=args.run,
             test_id=test_id,
         )
-    if args.run:
-        simulation.run_nodes_mapping()
+    simulation._run()
+
 
     # simulation.run_nodes_mapping()
     # simulation.run_correct_node_probability()
