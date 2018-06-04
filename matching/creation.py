@@ -158,10 +158,12 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, hyperparame
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistributionWithout:
         A = np.array([np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count, density=True, range=(lower, higher))[0] for i in graph.nodes()])
+        A = (A - A.mean(axis=0)) / A.std(axis=0)
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigDistribution:
         A = np.array([np.concatenate([np.array([graph.degree(i) / (higher * dimension_count)]) , np.histogram([graph.degree(neig) for neig in graph.neighbors(i)], bins=dimension_count - 1, density=True, range=(lower, higher))[0]], axis=0) for i in graph.nodes()])
+        A = (A - A.mean(axis=0)) / A.std(axis=0)
         return A
 
     elif embedding_algorithm_enum is EmbeddingType.DegreeNeigNeigDistribution:
@@ -184,10 +186,11 @@ def get_embeddings(graph, embedding_algorithm_enum, dimension_count, hyperparame
     else:
         raise NotImplementedError
 
-    e, t = embedding_alg.learn_embedding(graph=graph, no_python=True)
+    A, t = embedding_alg.learn_embedding(graph=graph, no_python=True)
 
-    e = np.dot(e, np.diag(np.sign(np.mean(e, axis=0))))
-    return e
+    A = np.dot(A, np.diag(np.sign(np.mean(A, axis=0))))
+    A = (A - A.mean(axis=0)) / A.std(axis=0)
+    return A
 
 
 def create_main_graph(graph_type, **kwargs):
