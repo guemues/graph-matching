@@ -22,8 +22,11 @@ class MatchingType(Enum):
 
 def distance_accuracy(distances):
     all_distance_mean = np.mean(distances)
+    all_distance_variance = np.mean(distances)
+
     correct_distance_mean = np.mean(np.diag(distances))
-    return max(0, 1 -correct_distance_mean / all_distance_mean)
+    correct_distance_variance = np.var(np.diag(distances))
+    return correct_distance_mean, correct_distance_variance, all_distance_mean, all_distance_variance
 
 
 def match_nearest(distances):

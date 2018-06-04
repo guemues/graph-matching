@@ -41,7 +41,7 @@ class OriginalSimulation(object):
         self.graph_type = RandomGraphType.Powerlaw
         self.embedding_type = embedding_type
         self.noises = np.arange(0.001, 0.051, 0.001).tolist()
-        self.avg_success = []
+        self.avg_results = []
         self.noisy_graphs = []
         self.main_graph = None
         self.test_id = test_id
@@ -79,8 +79,8 @@ class OriginalSimulation(object):
 
         for noisy_graph in self.noisy_graphs:
             distances = distance_matrix(noisy_graph.embeddings, self.main_graph.embeddings, p=2)
-            accuracy = distance_accuracy(distances)
-            self.avg_success.append((self.embedding_type.value, noisy_graph.noise, accuracy))
+            correct_distance_mean, correct_distance_variance, all_distance_mean, all_distance_variance = distance_accuracy(distances)
+            self.avg_results.append((self.embedding_type.value, noisy_graph.noise, correct_distance_mean, correct_distance_variance, all_distance_mean, all_distance_variance))
 
     def save(self):
         def formatdata(data):
@@ -90,8 +90,8 @@ class OriginalSimulation(object):
 
         with open(filename, 'w') as out:
             csv_out = csv.writer(out, delimiter=',')
-            csv_out.writerow(['embedding_type', 'noise', 'success'])
-            csv_out.writerows(formatdata(self.avg_success))
+            csv_out.writerow(['embedding_type', 'noise', 'correct_distance_mean', 'correct_distance_variance', 'all_distance_mean', 'all_distance_variance'])
+            csv_out.writerows(formatdata(self.avg_results))
 
 
 class Simulation(object):
